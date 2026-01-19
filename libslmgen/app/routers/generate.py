@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 from app.config import settings
 from app.session import session_manager
 from app.models import GenerateRequest, NotebookResponse
+from app.gist import create_gist
 from core import generate_notebook
 from core.recommender import MODELS
 
@@ -112,9 +113,20 @@ async def generate_training_notebook(request: GenerateRequest):
     # Build download URL
     download_url = f"/download/{request.session_id}"
     
-    # TODO: implement GitHub Gist upload for colab_url
-    # For now we just return the download Link
+    # Create GitHub Gist for Colab URL (if configured)
     colab_url = None
+    if settings.github_token:
+        try:
+            colab_url = await create_gist(
+                notebook_content=notebook_json,
+                filename=notebook_filename,
+                description=f"SLMGEN Fine-tuning Notebook - {model_name}",
+            )
+            if colab_url:
+                logger.info(f"Created Gist with Colab URL: {colab_url}")
+        except Exception as e:
+            logger.warning(f"Failed to create Gist: {e}")
+            # Don't fail the whole request if Gist creation fails
     
     return NotebookResponse(
         session_id=request.session_id,
