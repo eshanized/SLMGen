@@ -26,6 +26,8 @@ import {
     Home,
 } from '@/components/icons';
 
+import Image from 'next/image';
+
 interface NavItem {
     label: string;
     href: string;
@@ -57,8 +59,13 @@ export function Navbar() {
                 <nav className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center group-hover:shadow-lg group-hover:shadow-[#8ccf7e]/30 transition-all">
-                            <Rocket className="w-5 h-5 text-[#141b1e]" />
+                        <div className="relative w-9 h-9">
+                            <Image
+                                src="/logo.svg"
+                                alt="SLMGEN Logo"
+                                fill
+                                className="object-contain group-hover:scale-110 transition-transform"
+                            />
                         </div>
                         <span className="text-xl font-bold text-[#dadada] tracking-wide">SLMGEN</span>
                     </Link>

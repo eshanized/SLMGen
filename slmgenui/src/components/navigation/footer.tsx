@@ -9,6 +9,7 @@
  * @copyright 2026 Eshan Roy
  */
 
+import Image from 'next/image';
 import Link from 'next/link';
 import {
     Rocket,
@@ -76,8 +77,13 @@ export function Footer({ variant = 'default' }: FooterProps) {
                     {/* Brand */}
                     <div className="md:col-span-2">
                         <Link href="/" className="flex items-center gap-2 group mb-4">
-                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center group-hover:shadow-lg group-hover:shadow-[#8ccf7e]/30 transition-all">
-                                <Rocket className="w-5 h-5 text-[#141b1e]" />
+                            <div className="relative w-9 h-9">
+                                <Image
+                                    src="/logo.svg"
+                                    alt="SLMGEN Logo"
+                                    fill
+                                    className="object-contain group-hover:scale-110 transition-transform"
+                                />
                             </div>
                             <span className="text-xl font-bold text-[#dadada] tracking-wide">SLMGEN</span>
                         </Link>
