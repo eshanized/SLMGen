@@ -71,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, [supabase])
 
-    // Fetch user profile
+    // Fetch user profile - creates one if missing
     const fetchProfile = useCallback(async (userId: string, client: SupabaseClient) => {
         const { data, error } = await client
             .from('profiles')
@@ -79,7 +79,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .eq('id', userId)
             .single()
 
-        if (!error && data) {
+        if (error) {
+            // PGRST116 = "no rows returned" - profile doesn't exist yet
+            if (error.code === 'PGRST116') {
+                // Get user data to create profile
+                const { data: { user } } = await client.auth.getUser()
+                if (user) {
+                    // Create missing profile
+                    const newProfile = {
+                        id: userId,
+                        email: user.email || '',
+                        full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+                        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
+                    }
+
+                    const { data: createdProfile, error: createError } = await client
+                        .from('profiles')
+                        .insert(newProfile)
+                        .select()
+                        .single()
+
+                    if (!createError && createdProfile) {
+                        setProfile(createdProfile as Profile)
+                    } else {
+                        console.warn('Failed to create profile:', createError?.message)
+                    }
+                }
+            } else {
+                console.warn('Error fetching profile:', error.message)
+            }
+        } else if (data) {
             setProfile(data as Profile)
         }
     }, [])
