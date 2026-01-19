@@ -10,7 +10,7 @@
 
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -28,6 +28,17 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [magicLinkSent, setMagicLinkSent] = useState(false)
+    const [showSlowMessage, setShowSlowMessage] = useState(false)
+
+    // Show slow loading message after 3 seconds
+    useEffect(() => {
+        if (isLoading) {
+            const timer = setTimeout(() => setShowSlowMessage(true), 3000)
+            return () => clearTimeout(timer)
+        } else {
+            setShowSlowMessage(false)
+        }
+    }, [isLoading])
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -185,6 +196,13 @@ function LoginForm() {
                             </>
                         )}
                     </button>
+
+                    {/* Slow loading message */}
+                    {showSlowMessage && (
+                        <p className="text-center text-sm text-[#e5c76b] animate-pulse">
+                            ⏳ Server is warming up... This can take up to 30 seconds on first visit.
+                        </p>
+                    )}
                 </form>
 
                 {/* Magic Link */}

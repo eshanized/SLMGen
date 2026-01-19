@@ -13,7 +13,7 @@
 // Force dynamic rendering to avoid SSG issues with Supabase
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { Rocket, Mail, Lock, User, Github, ArrowRight, Loader2, Check } from '@/components/icons'
@@ -27,6 +27,17 @@ export default function SignupPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+    const [showSlowMessage, setShowSlowMessage] = useState(false)
+
+    // Show slow loading message after 3 seconds
+    useEffect(() => {
+        if (isLoading) {
+            const timer = setTimeout(() => setShowSlowMessage(true), 3000)
+            return () => clearTimeout(timer)
+        } else {
+            setShowSlowMessage(false)
+        }
+    }, [isLoading])
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -191,6 +202,13 @@ export default function SignupPage() {
                                 </>
                             )}
                         </button>
+
+                        {/* Slow loading message */}
+                        {showSlowMessage && (
+                            <p className="text-center text-sm text-[#e5c76b] animate-pulse">
+                                ⏳ Server is warming up... This can take up to 30 seconds on first visit.
+                            </p>
+                        )}
                     </form>
 
                     <p className="mt-4 text-xs text-center text-[#8a9899]">
