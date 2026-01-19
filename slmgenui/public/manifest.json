@@ -1,0 +1,22 @@
+{
+  "name": "SLMGEN",
+  "short_name": "SLMGEN",
+  "description": "Fine-tune Small Language Models in minutes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141b1e",
+  "theme_color": "#8ccf7e",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

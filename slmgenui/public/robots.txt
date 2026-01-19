@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://slmgen.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
