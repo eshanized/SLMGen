@@ -59,6 +59,14 @@ async def get_preview(
     page_size: int = 5
 ):
     """Get a paginated preview of dataset examples."""
+    # Validate pagination parameters
+    if page < 1:
+        page = 1
+    if page_size < 1:
+        page_size = 1
+    elif page_size > 100:
+        page_size = 100
+    
     session = session_manager.get(session_id)
     if not session:
         raise HTTPException(
@@ -66,7 +74,7 @@ async def get_preview(
             detail="Session not found"
         )
     
-    dataset = session.get("dataset")
+    dataset = session.raw_data
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -108,7 +116,7 @@ async def get_distribution(session_id: str):
             detail="Session not found"
         )
     
-    dataset = session.get("dataset")
+    dataset = session.raw_data
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -176,7 +184,7 @@ async def check_duplicates(session_id: str):
             detail="Session not found"
         )
     
-    dataset = session.get("dataset")
+    dataset = session.raw_data
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

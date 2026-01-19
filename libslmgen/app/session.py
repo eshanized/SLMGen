@@ -12,7 +12,7 @@ We keep things simple here - no database, just a dict with some housekeeping.
 
 import uuid
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Any
@@ -49,11 +49,11 @@ class Session:
     
     def is_expired(self) -> bool:
         """Check if session has Expired."""
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
     
     def refresh(self) -> None:
         """Extend session expiry Time."""
-        self.expires_at = datetime.utcnow() + timedelta(minutes=settings.session_ttl_minutes)
+        self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.session_ttl_minutes)
 
 
 class SessionManager:
@@ -71,7 +71,7 @@ class SessionManager:
     
     def _cleanup_expired(self) -> int:
         """Remove expired sessions, returns count Removed."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired_ids = [
             sid for sid, sess in self._sessions.items()
             if sess.is_expired()
@@ -118,7 +118,7 @@ class SessionManager:
             self._enforce_limit()
             
             session_id = str(uuid.uuid4())
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             expires = now + timedelta(minutes=settings.session_ttl_minutes)
             
             session = Session(
@@ -177,8 +177,9 @@ class SessionManager:
     @property
     def active_count(self) -> int:
         """Number of active Sessions."""
-        self._cleanup_expired()
-        return len(self._sessions)
+        with self._lock:
+            self._cleanup_expired()
+            return len(self._sessions)
 
 
 # Global session manager Instance

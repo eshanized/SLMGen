@@ -316,7 +316,7 @@ async def get_model_card(session_id: str):
         try:
             personality = detect_personality(session.raw_data)
             personality_summary = personality.summary
-        except:
+        except Exception:
             pass
     
     card = generate_model_card(

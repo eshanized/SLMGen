@@ -91,18 +91,18 @@ def verify_jwt(token: str) -> dict:
                 raise HTTPException(status_code=500, detail="Failed to fetch signing keys")
             
             # Find the key matching the kid
-            rsa_key = None
+            ec_key = None
             for key in jwks.get("keys", []):
                 if key.get("kid") == kid:
-                    rsa_key = key
+                    ec_key = key
                     break
             
-            if not rsa_key:
+            if not ec_key:
                 logger.warning(f"No matching key found for kid: {kid}")
                 raise HTTPException(status_code=401, detail="Invalid token signing key")
             
             # Convert JWK to PEM format for jose
-            public_key = jwk.construct(rsa_key)
+            public_key = jwk.construct(ec_key)
             
             payload = jwt.decode(
                 token,

@@ -11,7 +11,7 @@ CRUD operations for fine-tuning jobs with Supabase storage.
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.middleware.auth import get_current_user, AuthenticatedUser
 from app.supabase import get_supabase_client
@@ -161,7 +161,7 @@ async def update_job(
             detail="No update fields provided"
         )
     
-    update_data["updated_at"] = datetime.utcnow().isoformat()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     response = supabase.table("jobs") \
         .update(update_data) \

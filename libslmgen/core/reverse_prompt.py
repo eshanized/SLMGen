@@ -60,6 +60,9 @@ def _detect_output_structure(responses: list[str]) -> tuple[str, str]:
     
     total = len(responses[:100])
     
+    if total == 0:
+        return "free_text", "No responses in sample to analyze"
+    
     if json_count / total > 0.5:
         return "json", f"{int(json_count/total*100)}% of responses are JSON-structured"
     elif code_count / total > 0.3:
