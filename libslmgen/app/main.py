@@ -10,6 +10,10 @@ Handles CORS, routing, and lifecycle events.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
+# Load environment variables first (before any other imports)
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

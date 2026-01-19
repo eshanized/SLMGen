@@ -21,3 +21,4 @@ python-jose[cryptography]>=3.3.0
 # Testing (optional)
 pytest>=7.4.0
 httpx>=0.26.0
+python-dotenv
