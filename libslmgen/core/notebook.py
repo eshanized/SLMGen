@@ -59,20 +59,26 @@ def _estimate_training_time(model_size: str, num_examples: int) -> int:
 
 def _make_markdown_cell(content: str) -> dict:
     """Create a markdown Cell."""
+    # Jupyter expects each line to end with \n except the last
+    lines = content.split("\n")
+    source = [line + "\n" for line in lines[:-1]] + [lines[-1]] if lines else []
     return {
         "cell_type": "markdown",
         "metadata": {},
-        "source": content.split("\n"),
+        "source": source,
     }
 
 
-def _make_code_cell(code: str, outputs: list = None) -> dict:
+def _make_code_cell(code: str, outputs: list | None = None) -> dict:
     """Create a code Cell."""
+    # Jupyter expects each line to end with \n except the last
+    lines = code.split("\n")
+    source = [line + "\n" for line in lines[:-1]] + [lines[-1]] if lines else []
     return {
         "cell_type": "code",
         "metadata": {},
-        "source": code.split("\n"),
-        "outputs": outputs or [],
+        "source": source,
+        "outputs": outputs if outputs is not None else [],
         "execution_count": None,
     }
 

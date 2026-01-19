@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type {
     WizardStep,
     DatasetStats,
@@ -40,8 +40,27 @@ const initialState: SessionState = {
     currentStep: 'upload',
 };
 
+const STORAGE_KEY = 'slmgen-session';
+
+function loadFromStorage(): SessionState {
+    if (typeof window === 'undefined') return initialState;
+    try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : initialState;
+    } catch {
+        return initialState;
+    }
+}
+
 export function useSession() {
-    const [state, setState] = useState<SessionState>(initialState);
+    const [state, setState] = useState<SessionState>(loadFromStorage);
+
+    // Persist to sessionStorage on changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+    }, [state]);
 
     // Set session after Upload
     const setSession = useCallback((sessionId: string, stats: DatasetStats) => {
@@ -89,6 +108,9 @@ export function useSession() {
     // Reset Everything
     const reset = useCallback(() => {
         setState(initialState);
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
     }, []);
 
     // Check if we can proceed from configure

@@ -36,7 +36,8 @@ def _check_duplicates(data: list[dict]) -> tuple[float, str]:
     hashes = [_hash_conversation(entry) for entry in data]
     counts = Counter(hashes)
     
-    dupes = sum(1 for h, c in counts.items() if c > 1)
+    # Count actual duplicate instances (not unique hashes)
+    dupes = sum(c - 1 for c in counts.values() if c > 1)
     dupe_pct = (dupes / len(data)) * 100 if data else 0
     
     if dupe_pct > 20:

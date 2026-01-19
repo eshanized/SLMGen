@@ -66,6 +66,7 @@ class SessionManager:
     
     def __init__(self):
         self._sessions: dict[str, Session] = {}
+        self._lock = __import__('threading').Lock()  # Thread safety for concurrent requests
         logger.info("SessionManager initialized")
     
     def _cleanup_expired(self) -> int:
@@ -111,63 +112,67 @@ class SessionManager:
     
     def create(self) -> Session:
         """Create a new Session."""
-        # Housekeeping first
-        self._cleanup_expired()
-        self._enforce_limit()
-        
-        session_id = str(uuid.uuid4())
-        now = datetime.utcnow()
-        expires = now + timedelta(minutes=settings.session_ttl_minutes)
-        
-        session = Session(
-            id=session_id,
-            created_at=now,
-            expires_at=expires,
-        )
-        
-        self._sessions[session_id] = session
-        logger.info(f"Created new session: {session_id}")
-        
-        return session
+        with self._lock:
+            # Housekeeping first
+            self._cleanup_expired()
+            self._enforce_limit()
+            
+            session_id = str(uuid.uuid4())
+            now = datetime.utcnow()
+            expires = now + timedelta(minutes=settings.session_ttl_minutes)
+            
+            session = Session(
+                id=session_id,
+                created_at=now,
+                expires_at=expires,
+            )
+            
+            self._sessions[session_id] = session
+            logger.info(f"Created new session: {session_id}")
+            
+            return session
     
     def get(self, session_id: str) -> Optional[Session]:
         """Get a session by ID, returns None if not Found or expired."""
-        self._cleanup_expired()
-        
-        session = self._sessions.get(session_id)
-        if session is None:
-            return None
-        
-        if session.is_expired():
-            # shouldn't happen after cleanup but just in Case
-            self._sessions.pop(session_id, None)
-            return None
-        
-        # Refresh expiry on Access
-        session.refresh()
-        return session
+        with self._lock:
+            self._cleanup_expired()
+            
+            session = self._sessions.get(session_id)
+            if session is None:
+                return None
+            
+            if session.is_expired():
+                # shouldn't happen after cleanup but just in Case
+                self._sessions.pop(session_id, None)
+                return None
+            
+            # Refresh expiry on Access
+            session.refresh()
+            return session
     
     def update(self, session: Session) -> None:
         """Update session in Store."""
-        if session.id in self._sessions:
-            self._sessions[session.id] = session
+        with self._lock:
+            if session.id in self._sessions:
+                self._sessions[session.id] = session
     
     def delete(self, session_id: str) -> bool:
         """Delete a session and its Files."""
-        session = self._sessions.pop(session_id, None)
-        if session is None:
-            return False
-        
-        # Cleanup files
-        for path in [session.file_path, session.notebook_path]:
-            if path and Path(path).exists():
-                try:
-                    Path(path).unlink()
-                except Exception:
-                    pass
-        
-        logger.info(f"Deleted session: {session_id}")
-        return True
+        with self._lock:
+            session = self._sessions.pop(session_id, None)
+            if session is None:
+                return False
+            
+            # Cleanup files
+            for path in [session.file_path, session.notebook_path]:
+                if path and Path(path).exists():
+                    try:
+                        Path(path).unlink()
+                    except Exception:
+                        pass
+            
+            logger.info(f"Deleted session: {session_id}")
+            return True
     
     @property
     def active_count(self) -> int:
