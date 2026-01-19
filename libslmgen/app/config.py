@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     """App configuration loaded from Environment."""
     
     # CORS settings - where the frontend Lives
-    allowed_origins: str = "http://localhost:3000"
+    # Comma-separated list of allowed origins
+    allowed_origins: str = "http://localhost:3000,https://slmgen.vercel.app"
     
     # File storage stuff
     upload_dir: str = "./uploads"
