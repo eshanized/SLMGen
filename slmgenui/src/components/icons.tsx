@@ -137,4 +137,6 @@ export {
     Copy,
     Edit,
     Save,
+    Camera,
 } from 'lucide-react';
+
