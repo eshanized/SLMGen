@@ -117,8 +117,13 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-xl font-bold text-[#dadada]">SLMGEN</span>
                     </Link>
-                    <div className="text-sm text-[#8a9899]">
-                        Fine-tuning Wizard
+                    <div className="flex items-center gap-4">
+                        <Link href="/dashboard/history" className="text-sm text-[#8a9899] hover:text-[#dadada] transition-colors">
+                            History
+                        </Link>
+                        <Link href="/dashboard/settings" className="text-sm text-[#8a9899] hover:text-[#dadada] transition-colors">
+                            Settings
+                        </Link>
                     </div>
                 </div>
             </header>

@@ -83,8 +83,8 @@ export default function HomePage() {
               <a href="#how-it-works" className="text-[#8a9899] hover:text-[#dadada] transition-colors text-sm font-medium">
                 How It Works
               </a>
-              <Link href="/dashboard/history" className="text-[#8a9899] hover:text-[#dadada] transition-colors text-sm font-medium">
-                History
+              <Link href="/about" className="text-[#8a9899] hover:text-[#dadada] transition-colors text-sm font-medium">
+                About
               </Link>
             </div>
           </div>
@@ -241,6 +241,12 @@ export default function HomePage() {
             © 2026 Eshan Roy. MIT License.
           </div>
           <div className="flex items-center gap-6 text-sm">
+            <Link href="/terms" className="text-[#8a9899] hover:text-[#dadada] transition-colors">
+              Terms
+            </Link>
+            <Link href="/privacy" className="text-[#8a9899] hover:text-[#dadada] transition-colors">
+              Privacy
+            </Link>
             <a href="https://github.com/eshanized/slmgen" className="flex items-center gap-2 text-[#8a9899] hover:text-[#dadada] transition-colors">
               <Github className="w-4 h-4" />
               GitHub
