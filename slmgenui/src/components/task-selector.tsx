@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
     Tag,
     HelpCircle,
@@ -179,10 +179,10 @@ export function TaskSelector({ onComplete }: TaskSelectorProps) {
             <div className="flex items-center justify-center gap-4">
                 <div className={`flex items-center gap-2 ${step === 'task' ? 'text-[#8ccf7e]' : 'text-[#8a9899]'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step === 'task'
-                            ? 'bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e]'
-                            : selectedTask
-                                ? 'bg-[#8ccf7e] text-[#141b1e]'
-                                : 'bg-[#1e2528] border border-[#2d3437]'
+                        ? 'bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e]'
+                        : selectedTask
+                            ? 'bg-[#8ccf7e] text-[#141b1e]'
+                            : 'bg-[#1e2528] border border-[#2d3437]'
                         }`}>
                         {selectedTask ? <Check className="w-4 h-4" /> : '1'}
                     </div>
@@ -193,8 +193,8 @@ export function TaskSelector({ onComplete }: TaskSelectorProps) {
 
                 <div className={`flex items-center gap-2 ${step === 'deployment' ? 'text-[#8ccf7e]' : 'text-[#8a9899]'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step === 'deployment'
-                            ? 'bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e]'
-                            : 'bg-[#1e2528] border border-[#2d3437]'
+                        ? 'bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e]'
+                        : 'bg-[#1e2528] border border-[#2d3437]'
                         }`}>
                         2
                     </div>

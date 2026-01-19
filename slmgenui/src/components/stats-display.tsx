@@ -26,12 +26,6 @@ export function StatsDisplay({ stats }: StatsDisplayProps) {
         return 'text-[#e57474]';
     };
 
-    const getQualityBg = (score: number) => {
-        if (score >= 0.8) return 'bg-[#8ccf7e]';
-        if (score >= 0.5) return 'bg-[#e5c76b]';
-        return 'bg-[#e57474]';
-    };
-
     return (
         <div className="bg-[#1e2528]/80 rounded-xl p-6 border border-[#2d3437]">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-[#dadada] mb-4">

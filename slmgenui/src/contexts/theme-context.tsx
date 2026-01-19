@@ -30,9 +30,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // Load from localStorage
         const stored = localStorage.getItem('slmgen-theme') as Theme | null
         if (stored && stored !== theme) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setThemeState(stored)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {

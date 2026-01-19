@@ -15,7 +15,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    Rocket,
     Github,
     Menu,
     X,
