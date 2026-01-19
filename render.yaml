@@ -1,0 +1,28 @@
+# Render.com deployment configuration
+# https://render.com/docs/yaml-spec
+
+services:
+  # FastAPI Backend
+  - type: web
+    name: slmgen-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: libslmgen
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: ALLOWED_ORIGINS
+        value: https://slmgen.vercel.app,http://localhost:3000
+      - key: SUPABASE_URL
+        sync: false  # Set manually in dashboard
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true

@@ -15,10 +15,31 @@ from .analyzer import analyze_dataset
 from .recommender import get_recommendations
 from .notebook import generate_notebook
 
+# Advanced features
+from .personality import detect_personality
+from .risk import estimate_hallucination_risk
+from .confidence import calculate_confidence
+from .behavior import compose_behavior, BehaviorConfig
+from .prompt_linter import lint_prompt
+from .failure_preview import generate_failure_previews
+from .model_card import generate_model_card
+from .prompt_diff import compare_prompts
+
 __all__ = [
+    # Core
     "ingest_data",
     "validate_quality",
     "analyze_dataset",
     "get_recommendations",
     "generate_notebook",
+    # Advanced
+    "detect_personality",
+    "estimate_hallucination_risk",
+    "calculate_confidence",
+    "compose_behavior",
+    "BehaviorConfig",
+    "lint_prompt",
+    "generate_failure_previews",
+    "generate_model_card",
+    "compare_prompts",
 ]

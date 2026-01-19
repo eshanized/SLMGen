@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.session import session_manager
-from app.routers import upload, analyze, recommend, generate, jobs, preview
+from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced
 
 # Setup Logging
 logging.basicConfig(
@@ -64,6 +64,7 @@ app.include_router(recommend.router, tags=["Recommendation"])
 app.include_router(generate.router, tags=["Generation"])
 app.include_router(jobs.router)
 app.include_router(preview.router)
+app.include_router(advanced.router, tags=["Advanced Features"])
 
 
 @app.get("/")
