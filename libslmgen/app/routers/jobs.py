@@ -3,6 +3,15 @@ Jobs Router.
 
 CRUD operations for fine-tuning jobs with Supabase storage.
 
+These endpoints require a Supabase database connection to store job history.
+When running with AUTH_DISABLED=true (local dev mode), these endpoints will
+return a 503 error with a helpful message explaining how to enable them.
+
+The core workflow (upload → analyze → recommend → generate) works fine
+without Supabase - only job history persistence needs the database.
+
+Contributor: Vedant Singh Rajput <teleported0722@gmail.com>
+
 @author Eshan Roy <eshanized@proton.me>
 @license MIT
 @copyright 2026 Eshan Roy
@@ -14,9 +23,40 @@ from pydantic import BaseModel
 from datetime import datetime, timezone
 
 from app.middleware.auth import get_current_user, AuthenticatedUser
-from app.supabase import get_supabase_client
+from app.supabase import get_supabase_client, is_supabase_configured
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def _require_supabase():
+    """
+    Check if Supabase is configured, raise helpful error if not.
+    
+    This is called at the start of each jobs endpoint. If you're running
+    locally with AUTH_DISABLED=true, you probably don't have Supabase set up,
+    and that's totally fine! This returns a friendly error explaining the situation.
+    
+    Why 503 (Service Unavailable)?
+        It's the right status code for "this feature exists but isn't available right now"
+        The client can retry later when Supabase is configured.
+    
+    Raises:
+        HTTPException: 503 if Supabase is not configured
+    """
+    if not is_supabase_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Job history requires Supabase database connection. "
+                "To enable: set SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_KEY "
+                "environment variables. See docs/SUPABASE.md for setup instructions. "
+                "The core workflow (upload → analyze → recommend → generate) works without this!"
+            )
+        )
 
 
 # ============================================
@@ -79,7 +119,16 @@ async def list_jobs(
     limit: int = 50,
     offset: int = 0
 ):
-    """List all jobs for the current user."""
+    """
+    List all jobs for the current user.
+    
+    Returns a paginated list of the user's fine-tuning jobs, newest first.
+    Each job contains the full configuration and status.
+    
+    Note: Requires Supabase database connection. Returns 503 in local dev mode.
+    """
+    _require_supabase()
+    
     supabase = get_supabase_client()
     
     response = supabase.table("jobs") \
@@ -98,6 +147,7 @@ async def get_job(
     user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Get a specific job by ID."""
+    _require_supabase()
     supabase = get_supabase_client()
     
     response = supabase.table("jobs") \
@@ -122,6 +172,7 @@ async def create_job(
     user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Create a new job record."""
+    _require_supabase()
     supabase = get_supabase_client()
     
     job_data = {
@@ -150,6 +201,7 @@ async def update_job(
     user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Update a job record."""
+    _require_supabase()
     supabase = get_supabase_client()
     
     # Filter out None values
@@ -184,6 +236,7 @@ async def delete_job(
     user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Delete a job and its associated files."""
+    _require_supabase()
     supabase = get_supabase_client()
     
     # Get job first to check ownership and get file paths
@@ -227,6 +280,7 @@ async def get_job_by_session(
     user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Get a job by session ID."""
+    _require_supabase()
     supabase = get_supabase_client()
     
     response = supabase.table("jobs") \

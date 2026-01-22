@@ -4,6 +4,19 @@
 Supabase Client Configuration.
 
 Provides Supabase client factories for both service-level and user-level access.
+
+This module handles all the Supabase connections. The key things it provides:
+
+    - get_supabase_client(): For server-side operations (bypasses RLS)
+    - get_supabase_anon_client(): For operations respecting RLS
+    - is_supabase_configured(): Check if Supabase env vars are set (useful for dev mode!)
+    - Storage helpers for uploading/downloading files
+
+When running locally with AUTH_DISABLED=true, some of these functions won't work
+because the Supabase env vars aren't set. That's expected! The jobs router
+uses is_supabase_configured() to return helpful errors in that case.
+
+Contributor: Vedant Singh Rajput <teleported0722@gmail.com>
 """
 # Author: Eshan Roy <eshanized@proton.me>
 # License: MIT License
@@ -17,6 +30,28 @@ from typing import Optional
 from supabase import create_client, Client
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Configuration Helpers
+# =============================================================================
+
+def is_supabase_configured() -> bool:
+    """
+    Check if Supabase environment variables are configured.
+    
+    This is super useful for local development! When you run with AUTH_DISABLED=true,
+    you probably don't have Supabase env vars set. Routes that need the database
+    can check this and return a helpful error message instead of crashing.
+    
+    Returns:
+        True if SUPABASE_URL is set, False otherwise
+    
+    Example:
+        if not is_supabase_configured():
+            raise HTTPException(503, "This feature needs Supabase. Set SUPABASE_URL to enable.")
+    """
+    return bool(os.environ.get("SUPABASE_URL"))
 
 
 @lru_cache()

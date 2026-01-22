@@ -3,7 +3,19 @@
 """
 Authentication Middleware.
 
-JWT verification and user extraction for protected routes.
+This module handles all the auth stuff - JWT verification, user extraction,
+and the special "dev mode" for running without Supabase.
+
+How it works:
+    1. For production: We verify Supabase JWTs using either ES256 (JWKS) or HS256
+    2. For local dev: If AUTH_DISABLED=true, we skip all that and return a mock user
+
+The key dependencies you'll use in your routes:
+    - get_current_user: REQUIRES authentication (401 if not logged in)
+    - get_optional_user: Works for both logged-in and anonymous users
+    - require_role("admin"): Requires a specific role
+
+Contributor: Vedant Singh Rajput <teleported0722@gmail.com>
 """
 # Author: Eshan Roy <eshanized@proton.me>
 # License: MIT License
@@ -21,9 +33,12 @@ from cachetools import TTLCache
 logger = logging.getLogger(__name__)
 
 # Security scheme for Swagger UI
+# auto_error=False means we handle missing tokens ourselves (for optional auth routes)
 security = HTTPBearer(auto_error=False)
 
-# Cache JWKS for 15 minutes to avoid hitting Supabase on every request
+# Cache JWKS for 15 minutes to avoid hitting Supabase on every request.
+# This is important because JWKS fetching involves a network call, and we don't
+# want to do that on every single API request!
 _jwks_cache: TTLCache = TTLCache(maxsize=1, ttl=900)
 
 
@@ -50,7 +65,12 @@ def _get_jwks_cached(supabase_url: str) -> dict:
 
 @dataclass
 class AuthenticatedUser:
-    """Authenticated user context."""
+    """
+    Represents a logged-in user from Supabase.
+    
+    You'll get this from get_current_user() when the user provides a valid JWT.
+    The id is the Supabase user UUID, email is from their profile.
+    """
     id: str
     email: Optional[str]
     role: str
@@ -62,7 +82,12 @@ class AuthenticatedUser:
 
 @dataclass  
 class AnonymousUser:
-    """Anonymous/unauthenticated user."""
+    """
+    Represents someone who isn't logged in.
+    
+    You'll get this from get_optional_user() when no token is provided.
+    Useful for routes that work for both logged-in and anonymous users.
+    """
     id: None = None
     email: None = None
     role: str = "anon"
@@ -70,6 +95,27 @@ class AnonymousUser:
     @property
     def is_authenticated(self) -> bool:
         return False
+
+
+@dataclass
+class LocalDevUser:
+    """
+    A mock user for local development when auth is disabled.
+    
+    When you set AUTH_DISABLED=true, all auth dependencies return this user
+    instead of requiring a real Supabase JWT. This lets you run the app
+    locally without any cloud setup!
+    
+    The id "local-dev-user" is never a real Supabase UUID, so it's easy
+    to spot in logs if something weird is happening.
+    """
+    id: str = "local-dev-user"
+    email: str = "dev@localhost"
+    role: str = "authenticated"
+    
+    @property
+    def is_authenticated(self) -> bool:
+        return True
 
 
 def verify_jwt(token: str) -> dict:
@@ -147,21 +193,38 @@ def verify_jwt(token: str) -> dict:
 
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> AuthenticatedUser:
+) -> AuthenticatedUser | LocalDevUser:
     """
     Dependency to extract and verify the current user.
     
-    Use this for routes that REQUIRE authentication.
+    Use this for routes that REQUIRE authentication (like /jobs endpoints).
+    
+    How it works:
+        1. If AUTH_DISABLED=true -> returns a LocalDevUser (no verification!)
+        2. Otherwise -> verifies the JWT token and returns an AuthenticatedUser
+        3. If no token or invalid token -> raises 401 Unauthorized
+    
+    Example usage:
+        @router.get("/protected")
+        async def my_route(user: AuthenticatedUser = Depends(get_current_user)):
+            print(f"Hello, {user.email}!")
     
     Args:
         credentials: Bearer token from Authorization header
         
     Returns:
-        AuthenticatedUser with user details
+        AuthenticatedUser with user details, or LocalDevUser in dev mode
         
     Raises:
-        HTTPException: If no token or invalid token
+        HTTPException: If no token or invalid token (only when auth is enabled)
     """
+    # Check if we're in local dev mode - if so, skip all the JWT stuff!
+    from app.config import settings
+    if settings.auth_disabled:
+        logger.debug("Auth disabled - returning LocalDevUser")
+        return LocalDevUser()
+    
+    # Normal auth flow: require a valid token
     if credentials is None:
         raise HTTPException(
             status_code=401,
@@ -180,21 +243,45 @@ async def get_current_user(
 
 async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> AuthenticatedUser | AnonymousUser:
+) -> AuthenticatedUser | AnonymousUser | LocalDevUser:
     """
     Dependency to optionally extract the current user.
     
-    Use this for routes that work for both authenticated and anonymous users.
+    Use this for routes that work for BOTH authenticated and anonymous users.
+    For example, the upload endpoint works anonymously but tracks ownership
+    if you're logged in.
+    
+    How it works:
+        1. If AUTH_DISABLED=true -> returns a LocalDevUser
+        2. If no token provided -> returns AnonymousUser
+        3. If valid token -> returns AuthenticatedUser
+        4. If invalid token -> returns AnonymousUser (graceful fallback)
+    
+    Example usage:
+        @router.post("/upload")
+        async def upload(user = Depends(get_optional_user)):
+            if user.is_authenticated:
+                print(f"Upload by {user.email}")
+            else:
+                print("Anonymous upload")
     
     Args:
         credentials: Optional Bearer token
         
     Returns:
-        AuthenticatedUser if valid token, AnonymousUser otherwise
+        AuthenticatedUser if valid token, AnonymousUser otherwise, LocalDevUser in dev mode
     """
+    # Check if we're in local dev mode
+    from app.config import settings
+    if settings.auth_disabled:
+        logger.debug("Auth disabled - returning LocalDevUser")
+        return LocalDevUser()
+    
+    # No token? That's fine for optional auth routes
     if credentials is None:
         return AnonymousUser()
     
+    # Try to verify the token - if it fails, treat as anonymous
     try:
         payload = verify_jwt(credentials.credentials)
         return AuthenticatedUser(
@@ -203,6 +290,7 @@ async def get_optional_user(
             role=payload.get("role", "authenticated")
         )
     except HTTPException:
+        # Token was provided but invalid - treat as anonymous rather than erroring
         return AnonymousUser()
 
 
