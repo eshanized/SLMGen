@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Check, Info } from '@/components/icons'
+import { AlertTriangle, Check, Info, Lightbulb } from '@/components/icons'
 
 interface RiskData {
     score: number
@@ -86,8 +86,9 @@ export function RiskMeter({ sessionId }: RiskMeterProps) {
             )}
 
             {/* Recommendation */}
-            <div className="text-sm text-[#8a9899] p-3 bg-[#141b1e] rounded-lg">
-                💡 {risk.recommendation}
+            <div className="flex items-center gap-2 text-sm text-[#8a9899] p-3 bg-[#141b1e] rounded-lg">
+                <Lightbulb className="w-4 h-4 text-[#e5c76b] flex-shrink-0" />
+                {risk.recommendation}
             </div>
         </div>
     )

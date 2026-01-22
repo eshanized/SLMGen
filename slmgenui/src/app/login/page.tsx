@@ -200,8 +200,9 @@ function LoginForm() {
 
                     {/* Slow loading message */}
                     {showSlowMessage && (
-                        <p className="text-center text-sm text-[#e5c76b] animate-pulse">
-                            ⏳ Server is warming up... This can take up to 30 seconds on first visit.
+                        <p className="flex items-center justify-center gap-2 text-center text-sm text-[#e5c76b] animate-pulse">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Server is warming up... This can take up to 30 seconds on first visit.
                         </p>
                     )}
                 </form>

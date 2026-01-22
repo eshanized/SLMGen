@@ -11,7 +11,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AlertTriangle, ChevronRight } from '@/components/icons'
+import { AlertTriangle, ChevronRight, Lightbulb } from '@/components/icons'
 
 interface FailureCase {
     category: string
@@ -93,9 +93,10 @@ export function FailurePreview({ sessionId }: FailurePreviewProps) {
                                     <span className="text-[#e67e80]">Bad Response:</span>
                                     <p className="text-[#8a9899] mt-1 p-2 bg-[#141b1e] rounded">{c.bad_response}</p>
                                 </div>
-                                <p className="text-[#e5c76b] text-xs p-2 bg-[#e5c76b]/5 rounded">
-                                    💡 {c.why_it_fails}
-                                </p>
+                                <div className="flex items-center gap-2 text-[#e5c76b] text-xs p-2 bg-[#e5c76b]/5 rounded">
+                                    <Lightbulb className="w-3.5 h-3.5 flex-shrink-0" />
+                                    {c.why_it_fails}
+                                </div>
                             </div>
                         )}
                     </div>

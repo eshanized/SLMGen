@@ -8,6 +8,7 @@
 
 import Link from 'next/link'
 import { Metadata } from 'next'
+import { ArrowLeft } from '@/components/icons'
 
 export const metadata: Metadata = {
     title: 'Terms of Service',
@@ -20,8 +21,9 @@ export default function TermsPage() {
             {/* Header */}
             <header className="border-b border-[#2d3437] bg-[#1e2528]/80 backdrop-blur-sm">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link href="/" className="text-[#dadada] hover:text-[#8ccf7e] transition-colors">
-                        ← Back to Home
+                    <Link href="/" className="flex items-center gap-2 text-[#dadada] hover:text-[#8ccf7e] transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Home
                     </Link>
                 </div>
             </header>

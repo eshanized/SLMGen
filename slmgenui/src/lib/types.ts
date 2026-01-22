@@ -84,7 +84,6 @@ export interface TaskOption {
     value: TaskType;
     label: string;
     description: string;
-    icon: string;
 }
 
 // Deployment option for UI
@@ -92,5 +91,4 @@ export interface DeploymentOption {
     value: DeploymentTarget;
     label: string;
     description: string;
-    icon: string;
 }

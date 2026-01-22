@@ -13,14 +13,18 @@
 import { useState } from 'react'
 import {
     Download,
-    Check
-} from '@/components/icons'
+    Check,
+    Smile,
+    Zap,
+    Box,
+    Hammer
+} from 'lucide-react'
 
 interface ExportOption {
     id: string
     name: string
     description: string
-    icon: string
+    Icon: React.ElementType
     color: string
 }
 
@@ -29,28 +33,28 @@ const EXPORT_OPTIONS: ExportOption[] = [
         id: 'huggingface',
         name: 'HuggingFace Hub',
         description: 'Push to HF model repository',
-        icon: '🤗',
+        Icon: Smile,
         color: '#FFD21E'
     },
     {
         id: 'onnx',
         name: 'ONNX Format',
         description: 'For edge deployment',
-        icon: '⚡',
+        Icon: Zap,
         color: '#67b0e8'
     },
     {
         id: 'ollama',
         name: 'Ollama Modelfile',
         description: 'Run locally with Ollama',
-        icon: '🦙',
+        Icon: Box,
         color: '#8ccf7e'
     },
     {
         id: 'gguf',
         name: 'GGUF Quantized',
         description: 'For llama.cpp inference',
-        icon: '🔧',
+        Icon: Hammer,
         color: '#c47fd5'
     }
 ]
@@ -101,7 +105,9 @@ export function ExportOptions({ onExport, isExporting }: ExportOptionsProps) {
                                 : 'bg-[#1e2528] border-[#2d3437] hover:border-[#8ccf7e]/50'
                                 }`}
                         >
-                            <span className="text-2xl mb-2 block">{option.icon}</span>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${isSelected ? 'bg-[#8ccf7e]/20 text-[#8ccf7e]' : 'bg-[#141b1e] text-[#8a9899]'}`}>
+                                <option.Icon className="w-5 h-5" />
+                            </div>
                             <h4 className="font-medium text-[#dadada] text-sm">{option.name}</h4>
                             <p className="text-xs text-[#8a9899] mt-1">{option.description}</p>
                             {isSelected && (
