@@ -8,7 +8,7 @@
 
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { Rocket, BarChart3, Target, Zap, BookOpen, Star, ArrowLeft } from '@/components/icons'
+import { Rocket, BarChart3, Target, Zap, BookOpen, ArrowLeft } from '@/components/icons'
 
 export const metadata: Metadata = {
     title: 'About',

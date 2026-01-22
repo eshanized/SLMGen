@@ -128,19 +128,22 @@ export function Confetti({ active = true, onComplete }: ConfettiProps) {
 
     // Auto-hide after animation completes
     useEffect(() => {
-        if (!active) {
-            setIsVisible(false);
-            return;
+        if (active) {
+            // Defer update to avoid sync render warning
+            setTimeout(() => {
+                setIsVisible(true);
+            }, 0);
+
+            const timer = setTimeout(() => {
+                setIsVisible(false);
+                onComplete?.();
+            }, ANIMATION_DURATION_MS);
+            return () => clearTimeout(timer);
+        } else {
+            setTimeout(() => {
+                setIsVisible(false);
+            }, 0);
         }
-
-        setIsVisible(true);
-
-        const timer = setTimeout(() => {
-            setIsVisible(false);
-            onComplete?.();
-        }, ANIMATION_DURATION_MS);
-
-        return () => clearTimeout(timer);
     }, [active, onComplete]);
 
     // Don't render anything if not visible

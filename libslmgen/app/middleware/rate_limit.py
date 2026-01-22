@@ -42,7 +42,7 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSO
     return JSONResponse(
         status_code=429,
         content={
-            "detail": f"Rate limit exceeded. Try again in a few seconds.",
+            "detail": "Rate limit exceeded. Try again in a few seconds.",
             "retry_after": exc.detail,
         }
     )

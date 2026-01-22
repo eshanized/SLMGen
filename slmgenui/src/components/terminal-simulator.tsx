@@ -113,8 +113,11 @@ export function TerminalSimulator({
         // Don't run if we've finished all commands
         if (commandIndex >= commands.length) {
             if (!isComplete) {
-                setIsComplete(true);
-                onComplete?.();
+                // Defer state update to avoid sync render warning
+                setTimeout(() => {
+                    setIsComplete(true);
+                    onComplete?.();
+                }, 0);
             }
             return;
         }
@@ -123,16 +126,13 @@ export function TerminalSimulator({
 
         // If this is an output line (not typed), show it instantly
         if (currentCommand.isOutput) {
-            setCompletedLines(prev => [...prev, currentCommand.text]);
-            setCurrentLine('');
-            setCharIndex(0);
-
-            // Wait for the delay, then move to next command
-            const timer = setTimeout(() => {
+            setTimeout(() => {
+                setCompletedLines(prev => [...prev, currentCommand.text]);
+                setCurrentLine('');
+                setCharIndex(0);
                 setCommandIndex(prev => prev + 1);
-            }, currentCommand.delay);
-
-            return () => clearTimeout(timer);
+            }, 0);
+            return;
         }
 
         // Normal typing behavior
@@ -146,16 +146,17 @@ export function TerminalSimulator({
             return () => clearTimeout(timer);
         } else {
             // Finished typing this command
-            setCompletedLines(prev => [...prev, currentCommand.text]);
-            setCurrentLine('');
-            setCharIndex(0);
+            setTimeout(() => {
+                setCompletedLines(prev => [...prev, currentCommand.text]);
+                setCurrentLine('');
+                setCharIndex(0);
 
-            // Wait for the delay, then move to next command
-            const timer = setTimeout(() => {
-                setCommandIndex(prev => prev + 1);
-            }, currentCommand.delay);
-
-            return () => clearTimeout(timer);
+                // Add small delay before next command
+                setTimeout(() => {
+                    setCommandIndex(prev => prev + 1);
+                }, currentCommand.delay);
+            }, 0);
+            return;
         }
     }, [commandIndex, charIndex, commands, isComplete, onComplete]);
 
@@ -210,10 +211,10 @@ export function TerminalSimulator({
                         <div
                             key={index}
                             className={`mb-1 ${line.startsWith('✓')
-                                    ? 'text-[#8ccf7e]'
-                                    : line.startsWith('$')
-                                        ? 'text-[#67b0e8]'
-                                        : 'text-[#8a9899]'
+                                ? 'text-[#8ccf7e]'
+                                : line.startsWith('$')
+                                    ? 'text-[#67b0e8]'
+                                    : 'text-[#8a9899]'
                                 }`}
                         >
                             {line}

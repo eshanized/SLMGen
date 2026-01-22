@@ -278,7 +278,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-[#dadada] mb-3">Self-Contained Notebooks</h3>
               <p className="text-[#8a9899] leading-relaxed">
-                No messy uploads. Your dataset is <span className="text-[#dadada]">base64-embedded</span> directly into the generated notebook. Just open in Colab and hit "Run All".
+                No messy uploads. Your dataset is <span className="text-[#dadada]">base64-embedded</span> directly into the generated notebook. Just open in Colab and hit &quot;Run All&quot;.
               </p>
             </motion.div>
 
