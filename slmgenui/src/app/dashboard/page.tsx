@@ -1,10 +1,14 @@
 /**
  * Dashboard Page - Main Fine-tuning Wizard.
  * 
- * 4-step wizard: Upload → Configure → Recommend → Generate
- * Everblush themed with Lucide icons.
+ * This is the heart of SLMGen! It guides users through 4 steps:
+ * Upload → Configure → Recommend → Generate
+ * 
+ * Each step has its own UI, and we use framer-motion for smooth transitions.
+ * The session hook tracks all the state as users progress.
  * 
  * @author Eshan Roy <eshanized@proton.me>
+ * @contributor Vedant Singh Rajput <teleported0722@gmail.com>
  * @license MIT
  * @copyright 2026 Eshan Roy
  */
@@ -20,6 +24,8 @@ import { StatsDisplay } from '@/components/stats-display';
 import { TaskSelector } from '@/components/task-selector';
 import { ModelCard } from '@/components/model-card';
 import { NotebookReady } from '@/components/notebook-ready';
+import { DataPreview } from '@/components/data-preview';
+import { TerminalSimulator } from '@/components/terminal-simulator';
 import { getRecommendation, generateNotebook, ApiError } from '@/lib/api';
 import {
     Rocket,
@@ -49,10 +55,13 @@ export default function DashboardPage() {
     // Get current step Index
     const currentStepIndex = STEPS.findIndex(s => s.key === session.currentStep);
 
-    // Handle successful Upload
-    const handleUpload = useCallback((sessionId: string, stats: typeof session.stats) => {
+    /**
+     * Handle successful file upload.
+     * Now also receives the file preview content for the chat bubble display!
+     */
+    const handleUpload = useCallback((sessionId: string, stats: typeof session.stats, filePreview: string) => {
         if (stats) {
-            session.setSession(sessionId, stats);
+            session.setSession(sessionId, stats, filePreview);
             setError(null);
         }
     }, [session]);
@@ -230,6 +239,12 @@ export default function DashboardPage() {
                                 className="space-y-8"
                             >
                                 <StatsDisplay stats={session.stats} />
+
+                                {/* NEW: Chat preview of the uploaded data */}
+                                {session.filePreview && (
+                                    <DataPreview fileContent={session.filePreview} maxExamples={3} />
+                                )}
+
                                 <TaskSelector onComplete={handleConfigComplete} />
 
                                 {/* Loading state */}
@@ -282,6 +297,11 @@ export default function DashboardPage() {
                                         )}
                                     </button>
                                 </div>
+
+                                {/* Terminal Simulator - shows during generation */}
+                                {isLoading && (
+                                    <TerminalSimulator />
+                                )}
 
                                 {/* Alternative Models */}
                                 {session.recommendation.alternatives.length > 0 && (

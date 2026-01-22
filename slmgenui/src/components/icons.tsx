@@ -4,6 +4,7 @@
  * Re-exports Lucide icons with consistent styling.
  * 
  * @author Eshan Roy <eshanized@proton.me>
+ * @contributor Vedant Singh Rajput <teleported0722@gmail.com>
  * @license MIT
  * @copyright 2026 Eshan Roy
  */
@@ -15,6 +16,8 @@ export {
     ArrowLeft,
     ChevronRight,
     ChevronLeft,
+    ChevronDown,
+    ChevronUp,
     X,
     Check,
     Plus,

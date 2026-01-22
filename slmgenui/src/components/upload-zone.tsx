@@ -2,9 +2,16 @@
  * Upload Zone Component.
  * 
  * Drag-and-drop file upload with validation feedback.
- * Everblush themed.
+ * Now also reads file content locally for the chat preview feature!
+ * 
+ * How it works:
+ * 1. User drops a .jsonl file
+ * 2. We use FileReader to read the first ~10KB (for preview)
+ * 3. We upload the full file to the backend
+ * 4. We pass both the session info AND the preview content to the parent
  * 
  * @author Eshan Roy <eshanized@proton.me>
+ * @contributor Vedant Singh Rajput <teleported0722@gmail.com>
  * @license MIT
  * @copyright 2026 Eshan Roy
  */
@@ -16,10 +23,58 @@ import { Upload, FileText } from '@/components/icons';
 import type { DatasetStats } from '@/lib/types';
 import { uploadDataset, ApiError } from '@/lib/api';
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
 interface UploadZoneProps {
-    onUpload: (sessionId: string, stats: DatasetStats) => void;
+    /**
+     * Called when upload succeeds.
+     * Now includes filePreview - the first ~10KB of the file for the chat preview.
+     */
+    onUpload: (sessionId: string, stats: DatasetStats, filePreview: string) => void;
     onError: (error: string) => void;
 }
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Reads the first N bytes of a file using FileReader.
+ * 
+ * Why only the first 10KB? We don't need the entire dataset for preview.
+ * Reading 100MB into memory would crash the browser tab!
+ * 
+ * @param file - The File object to read
+ * @param maxBytes - Maximum bytes to read (default: 10KB)
+ * @returns Promise resolving to the file content as string
+ */
+function readFilePreview(file: File, maxBytes: number = 10000): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        // Slice the file to only read what we need
+        const slice = file.slice(0, maxBytes);
+
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                resolve(event.target.result as string);
+            } else {
+                reject(new Error('Failed to read file'));
+            }
+        };
+
+        reader.onerror = () => reject(new Error('Failed to read file'));
+
+        // Read as text (UTF-8)
+        reader.readAsText(slice);
+    });
+}
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 export function UploadZone({ onUpload, onError }: UploadZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
@@ -27,9 +82,17 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
     const [fileName, setFileName] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Handle file Selection
+    /**
+     * Handle file selection - this is the main logic.
+     * 
+     * We do two things in parallel:
+     * 1. Read file preview locally (fast)
+     * 2. Upload to backend (slower)
+     * 
+     * This way the user gets instant feedback while upload happens.
+     */
     const handleFile = useCallback(async (file: File) => {
-        // Validate file Type
+        // Step 1: Basic validation - is it a .jsonl file?
         if (!file.name.toLowerCase().endsWith('.jsonl')) {
             onError('Please upload a .jsonl file');
             return;
@@ -39,8 +102,17 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
         setIsUploading(true);
 
         try {
+            // Step 2: Read preview content locally (this is instant)
+            // We read about 10KB which should cover 5-10 examples
+            const filePreview = await readFilePreview(file);
+
+            // Step 3: Upload to backend (this takes time)
             const response = await uploadDataset(file);
-            onUpload(response.session_id, response.stats);
+
+            // Step 4: Pass everything to parent
+            // The parent (Dashboard) will store this in session state
+            onUpload(response.session_id, response.stats, filePreview);
+
         } catch (error) {
             if (error instanceof ApiError) {
                 onError(error.message);
@@ -53,7 +125,11 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
         }
     }, [onUpload, onError]);
 
-    // Drag event handlers
+    // ========================================================================
+    // DRAG AND DROP HANDLERS
+    // These are pretty standard - just updating state on drag events
+    // ========================================================================
+
     const handleDragEnter = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -82,7 +158,7 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
         }
     }, [handleFile]);
 
-    // Click to Upload
+    // Click to open file browser
     const handleClick = useCallback(() => {
         fileInputRef.current?.click();
     }, []);
@@ -93,6 +169,10 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
             handleFile(files[0]);
         }
     }, [handleFile]);
+
+    // ========================================================================
+    // RENDER
+    // ========================================================================
 
     return (
         <div
@@ -122,13 +202,13 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
             <div className="flex flex-col items-center gap-4 text-center">
                 {isUploading ? (
                     <>
-                        {/* Loading spinner */}
+                        {/* Loading spinner - shows while uploading */}
                         <div className="w-16 h-16 border-4 border-[#8ccf7e] border-t-transparent rounded-full animate-spin" />
                         <p className="text-lg text-[#dadada]">Uploading {fileName}...</p>
                     </>
                 ) : (
                     <>
-                        {/* Upload icon */}
+                        {/* Upload icon - the gradient circle looks nice */}
                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center shadow-lg shadow-[#8ccf7e]/20">
                             <Upload className="w-10 h-10 text-[#141b1e]" />
                         </div>
@@ -142,6 +222,7 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
                             </p>
                         </div>
 
+                        {/* Format hint */}
                         <div className="flex items-center gap-2 text-sm text-[#8a9899]">
                             <span className="flex items-center gap-1.5 px-2 py-1 bg-[#1e2528] rounded-md border border-[#2d3437]">
                                 <FileText className="w-4 h-4" />
