@@ -9,15 +9,15 @@
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Sofia_Sans } from 'next/font/google';
+import { JetBrains_Mono } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { AuthProvider } from '@/contexts/auth-context';
 import './globals.css';
 
-// Primary font for the whole website
-const sofiaSans = Sofia_Sans({
+// Primary font for the whole website (JetBrains Mono)
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-sofia-sans',
+  variable: '--font-jetbrains-mono',
   display: 'swap',
 });
 
@@ -156,7 +156,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${sofiaSans.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
         <AuthProvider>
           {children}
         </AuthProvider>

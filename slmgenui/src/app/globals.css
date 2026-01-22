@@ -38,7 +38,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sofia-sans), sans-serif, 'Courier New', monospace;
+  font-family: var(--font-jetbrains-mono), 'Courier New', monospace;
 }
 
 /* Gradient text utility - Everblush */
