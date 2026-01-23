@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, Check, AlertTriangle, X, Box, Info } from 'lucide-react';
+import { Search, Loader2, Check, AlertTriangle, Box, Info } from 'lucide-react';
 import { validateModel } from '@/lib/api';
 import type { ValidateModelResponse } from '@/lib/types';
 import { toast } from 'sonner';
@@ -43,9 +43,10 @@ export function CustomModelInput({ onSelect, disabled }: CustomModelInputProps) 
             } else {
                 toast.warning('Model may not be supported');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || 'Failed to validate model. Check the ID and try again.');
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+            setError(errorMessage || 'Failed to validate model. Check the ID and try again.');
         } finally {
             setIsValidating(false);
         }
@@ -139,8 +140,8 @@ export function CustomModelInput({ onSelect, disabled }: CustomModelInputProps) 
                                 </div>
 
                                 <div className={`mt-4 p-3 rounded-lg text-sm flex items-start gap-2 ${result.is_compatible
-                                        ? 'bg-[#8ccf7e]/10 text-[#8ccf7e]'
-                                        : 'bg-[#e69875]/10 text-[#e69875]'
+                                    ? 'bg-[#8ccf7e]/10 text-[#8ccf7e]'
+                                    : 'bg-[#e69875]/10 text-[#e69875]'
                                     }`}>
                                     {result.is_compatible ? <Check className="w-4 h-4 mt-0.5" /> : <Info className="w-4 h-4 mt-0.5" />}
                                     {result.compatibility_reason}

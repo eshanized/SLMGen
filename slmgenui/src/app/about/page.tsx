@@ -8,6 +8,7 @@
 
 import Link from 'next/link'
 import { Metadata } from 'next'
+import Image from 'next/image'
 import { Rocket, BarChart3, Target, Zap, BookOpen, ArrowLeft } from '@/components/icons'
 
 export const metadata: Metadata = {
@@ -80,11 +81,12 @@ export default function AboutPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Eshan - Creator */}
                         <div className="flex items-center gap-6 p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl hover:border-[#8ccf7e]/30 transition-colors">
-                            <div className="w-20 h-20 rounded-full bg-[#141b1e] overflow-hidden border-2 border-[#8ccf7e]/20 flex-shrink-0">
-                                <img
+                            <div className="w-20 h-20 rounded-full bg-[#141b1e] overflow-hidden border-2 border-[#8ccf7e]/20 flex-shrink-0 relative">
+                                <Image
                                     src="https://github.com/eshanized.png"
                                     alt="Eshan Roy"
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                 />
                             </div>
                             <div>
@@ -105,11 +107,12 @@ export default function AboutPage() {
 
                         {/* Vedant - Contributor */}
                         <div className="flex items-center gap-6 p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl hover:border-[#6cbfbf]/30 transition-colors">
-                            <div className="w-20 h-20 rounded-full bg-[#141b1e] overflow-hidden border-2 border-[#6cbfbf]/20 flex-shrink-0">
-                                <img
+                            <div className="w-20 h-20 rounded-full bg-[#141b1e] overflow-hidden border-2 border-[#6cbfbf]/20 flex-shrink-0 relative">
+                                <Image
                                     src="https://github.com/vedanthq.png"
                                     alt="Vedant Singh Rajput"
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                 />
                             </div>
                             <div>

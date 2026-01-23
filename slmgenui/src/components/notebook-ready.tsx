@@ -21,14 +21,13 @@ import { Check, Download, ExternalLink, ClipboardList, ArrowLeft, Sparkles } fro
 import { Confetti } from '@/components/confetti';
 
 interface NotebookReadyProps {
-    sessionId: string;
     filename: string;
     downloadUrl: string;
     colabUrl?: string | null;
     onStartOver: () => void;
 }
 
-export function NotebookReady({ sessionId, filename, downloadUrl, colabUrl, onStartOver }: NotebookReadyProps) {
+export function NotebookReady({ filename, downloadUrl, colabUrl, onStartOver }: NotebookReadyProps) {
     // const downloadUrl = getDownloadUrl(sessionId); // Deprecated: Backend provides full URL with token
 
     return (
