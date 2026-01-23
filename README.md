@@ -17,7 +17,7 @@
 
 ## ✨ What is SLMGEN?
 
-SLMGEN is a production-ready web application that automates SLM fine-tuning. Upload your JSONL dataset and receive ready-to-run Google Colab notebooks with Unsloth + LoRA optimization.
+SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL dataset and receive ready-to-run Google Colab notebooks with Unsloth + LoRA optimization.
 
 **Your Data → Best Model → Matched.** One notebook. Zero setup. Ready to train.
 

@@ -60,8 +60,8 @@ export function NotebookReady({ sessionId, filename, colabUrl, onStartOver }: No
                     Download Notebook
                 </a>
 
-                {/* Colab Link if Available */}
-                {colabUrl && (
+                {/* Colab Link if Available (and NOT localhost) */}
+                {colabUrl && !colabUrl.includes('localhost') && !colabUrl.includes('127.0.0.1') ? (
                     <a
                         href={colabUrl}
                         target="_blank"
@@ -71,7 +71,26 @@ export function NotebookReady({ sessionId, filename, colabUrl, onStartOver }: No
                         <ExternalLink className="w-5 h-5" />
                         Open in Colab
                     </a>
-                )}
+                ) : colabUrl ? (
+                    // Localhost fallback
+                    <div className="flex flex-col items-center gap-2 text-sm text-[#e69875] bg-[#e69875]/10 px-4 py-2 rounded-lg border border-[#e69875]/20 max-w-xs">
+                        <p className="font-semibold flex items-center gap-2">
+                            <ExternalLink className="w-4 h-4" />
+                            Running Locally?
+                        </p>
+                        <p className="opacity-80">
+                            Google Colab cannot access localhost. Please download the notebook and upload it manually.
+                        </p>
+                        <a
+                            href="https://colab.research.google.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-[#dadada]"
+                        >
+                            Go to Google Colab
+                        </a>
+                    </div>
+                ) : null}
             </div>
 
             {/* Instructions */}
