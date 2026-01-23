@@ -27,6 +27,7 @@ import { ModelCard, ModelCardSkeleton } from '@/components/model-card';
 import { NotebookReady } from '@/components/notebook-ready';
 import { DataPreview } from '@/components/data-preview';
 import { TerminalSimulator } from '@/components/terminal-simulator';
+import { CustomModelInput } from '@/components/custom-model-input';
 import { getRecommendation, generateNotebook, ApiError } from '@/lib/api';
 import {
     Rocket,
@@ -283,6 +284,12 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Custom Model Input */}
+                                <CustomModelInput
+                                    onSelect={(id) => handleGenerateNotebook(id)}
+                                    disabled={isLoading}
+                                />
                             </motion.div>
                         )}
 
@@ -305,7 +312,7 @@ export default function DashboardPage() {
                         )}
                     </AnimatePresence>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
