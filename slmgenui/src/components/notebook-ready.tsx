@@ -19,17 +19,17 @@
 
 import { Check, Download, ExternalLink, ClipboardList, ArrowLeft, Sparkles } from '@/components/icons';
 import { Confetti } from '@/components/confetti';
-import { getDownloadUrl } from '@/lib/api';
 
 interface NotebookReadyProps {
     sessionId: string;
     filename: string;
+    downloadUrl: string;
     colabUrl?: string | null;
     onStartOver: () => void;
 }
 
-export function NotebookReady({ sessionId, filename, colabUrl, onStartOver }: NotebookReadyProps) {
-    const downloadUrl = getDownloadUrl(sessionId);
+export function NotebookReady({ sessionId, filename, downloadUrl, colabUrl, onStartOver }: NotebookReadyProps) {
+    // const downloadUrl = getDownloadUrl(sessionId); // Deprecated: Backend provides full URL with token
 
     return (
         <div className="text-center space-y-8">
