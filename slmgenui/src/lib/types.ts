@@ -92,3 +92,17 @@ export interface DeploymentOption {
     label: string;
     description: string;
 }
+
+// Custom model validation response from HuggingFace
+export interface ValidateModelResponse {
+    model_id: string;
+    name: string;
+    architecture: string;
+    context_window: number;
+    is_gated: boolean;
+    downloads: number;
+    likes: number;
+    is_compatible: boolean;
+    compatibility_reason: string;
+    supported_architectures: string[];
+}

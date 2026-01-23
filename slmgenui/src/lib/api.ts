@@ -191,3 +191,28 @@ export async function healthCheck(): Promise<boolean> {
         return false;
     }
 }
+
+/**
+ * Validate a custom Hugging Face model ID.
+ * Checks if the model exists and is compatible with Unsloth.
+ */
+export async function validateModel(modelId: string): Promise<{
+    model_id: string;
+    name: string;
+    architecture: string;
+    context_window: number;
+    is_gated: boolean;
+    downloads: number;
+    likes: number;
+    is_compatible: boolean;
+    compatibility_reason: string;
+    supported_architectures: string[];
+}> {
+    return apiRequest('/validate-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model_id: modelId }),
+    });
+}
