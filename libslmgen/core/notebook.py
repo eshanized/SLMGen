@@ -15,55 +15,22 @@ import json
 import base64
 import logging
 from datetime import datetime
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+from core.registry import get_lora_targets
 
 logger = logging.getLogger(__name__)
 
-# LoRA target modules for different model architectures
-# Each architecture has specific projection layers that can be fine-tuned.
-# Using incorrect targets will cause training to fail or produce incorrect adapters.
-# FIX: A1 - Added explicit mappings for all supported architectures (Gemma, Llama, Phi, etc.)
-LORA_TARGETS = {
-    # Phi models use fc1/fc2 instead of gate_proj/up_proj/down_proj
-    "microsoft/Phi": ["q_proj", "k_proj", "v_proj", "o_proj", "fc1", "fc2"],
-    # Gemma models have simpler attention, no MLP gate/up/down projections exposed for LoRA
-    "google/gemma": ["q_proj", "k_proj", "v_proj", "o_proj"],
-    # Llama/Mistral-style models have the standard MLP projections
-    "meta-llama": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "mistralai": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "Qwen": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "HuggingFaceTB/SmolLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "TinyLlama": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "stabilityai": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    "deepseek-ai": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-}
-
-# Default fallback for unknown models - uses most common architecture
-_DEFAULT_LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-
-
-def _get_lora_targets(model_id: str) -> list[str]:
-    """
-    Get the correct LoRA target modules for a given model.
-    
-    Different model architectures have different layer names for attention
-    and MLP components. Using wrong targets causes training failure.
-    """
-    for prefix, targets in LORA_TARGETS.items():
-        if model_id.startswith(prefix):
-            return targets
-    return _DEFAULT_LORA_TARGETS
-
-
-# FIX: A2 - Removed _is_gated_model function.
-# Gated model detection is now passed explicitly from recommender.MODELS
-# to avoid duplication and ensure consistency.
+# Setup Jinja2 environment
+TEMPLATE_DIR = Path(__file__).parent / "templates"
+env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
 
 def _estimate_training_time(model_size: str, num_examples: int) -> int:
     """
     Estimate training time in minutes on T4 GPU.
-    
-    FIX: Now accepts model_size directly from ModelSpec instead of parsing names.
     """
     base_times = {
         "1B": 5,
@@ -85,32 +52,6 @@ def _estimate_training_time(model_size: str, num_examples: int) -> int:
     return int(base * scale * 3)
 
 
-def _make_markdown_cell(content: str) -> dict:
-    """Create a markdown Cell."""
-    # Jupyter expects each line to end with \n except the last
-    lines = content.split("\n")
-    source = [line + "\n" for line in lines[:-1]] + [lines[-1]] if lines else []
-    return {
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": source,
-    }
-
-
-def _make_code_cell(code: str, outputs: list | None = None) -> dict:
-    """Create a code Cell."""
-    # Jupyter expects each line to end with \n except the last
-    lines = code.split("\n")
-    source = [line + "\n" for line in lines[:-1]] + [lines[-1]] if lines else []
-    return {
-        "cell_type": "code",
-        "metadata": {},
-        "source": source,
-        "outputs": outputs if outputs is not None else [],
-        "execution_count": None,
-    }
-
-
 def generate_notebook(
     dataset_jsonl: str,
     model_id: str,
@@ -121,22 +62,7 @@ def generate_notebook(
     is_gated: bool,
 ) -> str:
     """
-    Generate a complete Jupyter notebook for fine-tuning.
-    
-    The notebook includes:
-    1. Title and Overview
-    2. Unsloth installation
-    3. GPU Verification
-    4. HuggingFace login (if gated model)
-    5. Base64-embedded Dataset
-    6. Model loading with 4-bit quantization
-    7. Data formatting
-    8. SFTTrainer Training
-    9. Save LoRA adapter
-    10. Test Inference
-    11. Export options
-    
-    Returns: JSON string of the notebook
+    Generate a complete Jupyter notebook for fine-tuning using Jinja2 templates.
     """
     logger.info(f"Generating notebook for {model_name} with {num_examples} examples")
     
@@ -144,304 +70,25 @@ def generate_notebook(
     dataset_b64 = base64.b64encode(dataset_jsonl.encode()).decode()
     
     # Get model-specific config
-    # FIX: A2 - is_gated now passed from caller (recommender) instead of re-detecting
-    lora_targets = _get_lora_targets(model_id)
+    lora_targets = get_lora_targets(model_id)
     training_time = _estimate_training_time(model_size, num_examples)
     
-    # Build notebook Cells
-    cells = []
-    
-    # 1. Title and Overview
-    cells.append(_make_markdown_cell(f"""# 🚀 Fine-Tune {model_name} with Unsloth
-
-**Generated by SLMGEN** | {datetime.now().strftime("%Y-%m-%d %H:%M")}
-
----
-
-## Dataset Overview
-- **Examples:** {num_examples:,}
-- **Task:** {task_type.replace("_", " ").title()}
-- **Model:** {model_name} ({model_id})
-- **Estimated Time:** ~{training_time} minutes on T4 GPU
-
----
-
-## Quick Start
-1. Click **Runtime → Run all** to start training
-2. Wait for training to complete (~{training_time} min)
-3. Test your model in the inference section
-4. Download the LoRA adapter from the files panel
-
-> 💡 **Tip:** This notebook is self-contained. Your dataset is embedded below - no file uploads needed!
-"""))
-    
-    # 2. Install Unsloth
-    cells.append(_make_markdown_cell("## 📦 Install Unsloth"))
-    cells.append(_make_code_cell("""# Install Unsloth - this gives us 2x faster training and 70% less VRAM
-# Takes about 2-3 minutes on first run
-
-%%capture
-!pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
-!pip install --no-deps xformers trl peft accelerate bitsandbytes triton
-
-print("✅ Unsloth installed successfully!")
-"""))
-    
-    # 3. GPU Verification
-    cells.append(_make_markdown_cell("## 🔧 Check GPU"))
-    cells.append(_make_code_cell("""import torch
-
-# Make sure we have a GPU
-if not torch.cuda.is_available():
-    raise RuntimeError("❌ No GPU found! Go to Runtime → Change runtime type → T4 GPU")
-
-gpu_name = torch.cuda.get_device_name(0)
-gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1e9
-
-print(f"✅ GPU: {gpu_name}")
-print(f"✅ Memory: {gpu_mem:.1f} GB")
-"""))
-    
-    # 4. HuggingFace Login (only for gated models)
-    if is_gated:
-        cells.append(_make_markdown_cell("""## 🔐 HuggingFace Login
-
-This model is gated - you need to:
-1. Get a HuggingFace token from https://huggingface.co/settings/tokens
-2. Accept the model license at the model page
-3. Paste your token below
-"""))
-        cells.append(_make_code_cell("""from huggingface_hub import login
-
-# Paste your HF token here or use the prompt
-# Get one at: https://huggingface.co/settings/tokens
-login()
-"""))
-    
-    # 5. Load Dataset
-    cells.append(_make_markdown_cell("## 📊 Load Your Dataset"))
-    cells.append(_make_code_cell(f"""import base64
-import json
-
-# Your dataset is embedded here as base64 - no file uploads needed!
-DATASET_B64 = "{dataset_b64}"
-
-# Decode the dataset
-dataset_str = base64.b64decode(DATASET_B64).decode()
-raw_data = [json.loads(line) for line in dataset_str.strip().split("\\n") if line.strip()]
-
-print(f"✅ Loaded {{len(raw_data):,}} training examples")
-
-# Preview first example
-print("\\n📝 First example:")
-print(json.dumps(raw_data[0], indent=2)[:500])
-"""))
-    
-    # 6. Load Model
-    cells.append(_make_markdown_cell("## 🤖 Load Base Model"))
-    cells.append(_make_code_cell(f"""from unsloth import FastLanguageModel
-
-# Load with 4-bit quantization for efficient Training
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="{model_id}",
-    max_seq_length=2048,
-    dtype=None,  # auto-detect
-    load_in_4bit=True,
-)
-
-print(f"✅ Loaded {{model.config.name_or_path}}")
-print(f"✅ Max sequence length: 2048")
-"""))
-    
-    # 7. Configure LoRA
-    lora_targets_str = json.dumps(lora_targets)
-    cells.append(_make_markdown_cell("## 🎯 Configure LoRA Adapters"))
-    cells.append(_make_code_cell(f"""# Add LoRA adapters for efficient fine-tuning
-# This only trains ~1-5% of the parameters
-
-model = FastLanguageModel.get_peft_model(
-    model,
-    r=16,  # LoRA rank - higher = more capacity but slower
-    lora_alpha=16,
-    lora_dropout=0,  # 0 is optimized
-    target_modules={lora_targets_str},
-    bias="none",
-    use_gradient_checkpointing="unsloth",  # saves VRAM
-    random_state=42,
-)
-
-print("✅ LoRA adapters configured")
-print(f"✅ Trainable parameters: {{model.print_trainable_parameters()}}")
-"""))
-    
-    # 8. Format Dataset
-    cells.append(_make_markdown_cell("## 📝 Format Data for Training"))
-    cells.append(_make_code_cell("""from datasets import Dataset
-
-# Convert to chat format that the model expects
-def format_conversation(example):
-    # Apply the model's chat template
-    text = tokenizer.apply_chat_template(
-        example["messages"],
-        tokenize=False,
-        add_generation_prompt=False,
-    )
-    return {"text": text}
-
-# Create dataset
-dataset = Dataset.from_list(raw_data)
-dataset = dataset.map(format_conversation)
-
-print(f"✅ Formatted {len(dataset):,} examples")
-print("\\n📝 Formatted example preview:")
-print(dataset[0]["text"][:800])
-"""))
-    
-    # 9. Training
-    cells.append(_make_markdown_cell(f"""## 🏋️ Train the Model
-
-This will take approximately **{training_time} minutes** on a T4 GPU.
-
-Watch the loss decrease - that means the model is learning!
-"""))
-    cells.append(_make_code_cell("""from trl import SFTTrainer
-from transformers import TrainingArguments
-
-trainer = SFTTrainer(
-    model=model,
-    tokenizer=tokenizer,
-    train_dataset=dataset,
-    dataset_text_field="text",
-    max_seq_length=2048,
-    dataset_num_proc=2,
-    packing=False,  # can be True for short conversations
-    args=TrainingArguments(
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
-        warmup_steps=5,
-        num_train_epochs=3,
-        learning_rate=2e-4,
-        fp16=not torch.cuda.is_bf16_supported(),
-        bf16=torch.cuda.is_bf16_supported(),
-        logging_steps=10,
-        optim="adamw_8bit",
-        weight_decay=0.01,
-        lr_scheduler_type="linear",
-        seed=42,
-        output_dir="outputs",
-    ),
-)
-
-print("🚀 Starting training...")
-trainer_stats = trainer.train()
-
-print("\\n✅ Training complete!")
-print(f"Training loss: {trainer_stats.training_loss:.4f}")
-print(f"Training time: {trainer_stats.metrics['train_runtime'] / 60:.1f} minutes")
-"""))
-    
-    # 10. Save Adapter
-    cells.append(_make_markdown_cell("## 💾 Save LoRA Adapter"))
-    cells.append(_make_code_cell("""# Save just the LoRA adapter (small file, ~50-100MB)
-model.save_pretrained("lora_adapter")
-tokenizer.save_pretrained("lora_adapter")
-
-print("✅ Saved LoRA adapter to 'lora_adapter/' folder")
-print("💡 Download it from the Files panel on the left")
-"""))
-    
-    # 11. Test Inference
-    cells.append(_make_markdown_cell("## 🧪 Test Your Fine-Tuned Model"))
-    cells.append(_make_code_cell("""# Enable faster inference
-FastLanguageModel.for_inference(model)
-
-# Test with a sample prompt - edit this!
-test_messages = [
-    {"role": "user", "content": "Hello! How can you help me today?"}
-]
-
-inputs = tokenizer.apply_chat_template(
-    test_messages,
-    tokenize=True,
-    add_generation_prompt=True,
-    return_tensors="pt",
-).to("cuda")
-
-outputs = model.generate(
-    input_ids=inputs,
-    max_new_tokens=256,
-    temperature=0.7,
-    do_sample=True,
-)
-
-response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-print("🤖 Model response:")
-print(response)
-"""))
-    
-    # 12. Export Options
-    cells.append(_make_markdown_cell("""## 📦 Export Options
-
-Choose how you want to export your model:
-"""))
-    cells.append(_make_code_cell("""# OPTION 1: Save as GGUF for llama.cpp / Ollama
-# Uncomment to use:
-
-# model.save_pretrained_gguf("model-gguf", tokenizer, quantization_method="q4_k_m")
-# print("✅ Saved GGUF model - ready for Ollama!")
-
-# OPTION 2: Merge LoRA and save full model
-# Uncomment to use:
-
-# model.save_pretrained_merged("model-merged", tokenizer, save_method="merged_16bit")
-# print("✅ Saved merged 16-bit model")
-
-# OPTION 3: Push to HuggingFace Hub
-# Uncomment and edit:
-
-# model.push_to_hub("your-username/model-name", token="your-hf-token")
-# tokenizer.push_to_hub("your-username/model-name", token="your-hf-token")
-# print("✅ Pushed to HuggingFace Hub!")
-
-print("💡 Uncomment the export option you want to use above!")
-"""))
-    
-    # 13. Next Steps
-    cells.append(_make_markdown_cell("""## 🎉 What's Next?
-
-Your fine-tuned model is ready! Here's what you can do:
-
-1. **Download the LoRA adapter** from the `lora_adapter/` folder
-2. **Export to GGUF** for use with Ollama or llama.cpp
-3. **Push to HuggingFace** to share your model
-4. **Test more prompts** to make sure it works well
-
----
-
-*Generated with ❤️ by [SLMGEN](https://github.com/eshanized/slmgen)*
-"""))
-    
-    # Build notebook Structure
-    notebook = {
-        "nbformat": 4,
-        "nbformat_minor": 0,
-        "metadata": {
-            "colab": {
-                "provenance": [],
-                "gpuType": "T4",
-            },
-            "kernelspec": {
-                "name": "python3",
-                "display_name": "Python 3",
-            },
-            "language_info": {
-                "name": "python",
-            },
-            "accelerator": "GPU",
-        },
-        "cells": cells,
+    # Prepare context for template
+    context = {
+        "model_name": model_name,
+        "model_id": model_id,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "num_examples": f"{num_examples:,}",
+        "task_type": task_type.replace("_", " ").title(),
+        "training_time": training_time,
+        "is_gated": is_gated,
+        "dataset_b64": dataset_b64,
+        "lora_targets": str(lora_targets),
     }
     
-    logger.info("Notebook generated successfully")
+    # Render template
+    template = env.get_template("notebook.json.j2")
+    notebook_json = template.render(**context)
     
-    return json.dumps(notebook, indent=2)
+    logger.info("Notebook generated successfully")
+    return notebook_json

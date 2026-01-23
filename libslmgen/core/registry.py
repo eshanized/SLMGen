@@ -36,6 +36,29 @@ SUPPORTED_ARCHITECTURES = frozenset([
     "InternLM2ForCausalLM",
 ])
 
+# LoRA target modules for different model architectures
+LORA_TARGETS = {
+    # Phi models use fc1/fc2
+    "Phi3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "PhiForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "fc1", "fc2"],
+    
+    # Gemma models have simple attention
+    "GemmaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "Gemma2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    
+    # Llama-like (most models)
+    "LlamaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "MistralForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "Qwen2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "GPTNeoXForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "StableLmForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "DeepseekForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "InternLM2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+}
+
+# Default fallback
+_DEFAULT_LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
 
 @dataclass
 class ModelInfo:
@@ -237,3 +260,35 @@ def check_compatibility(model_id: str) -> tuple[bool, str]:
         Tuple of (is_compatible, reason_message)
     """
     return get_registry().is_compatible(model_id)
+    return get_registry().is_compatible(model_id)
+
+
+def get_lora_targets(model_id: str) -> list[str]:
+    """
+    Get the correct LoRA target modules for a given model.
+    
+    Uses the registry to detect architecture and returns appropriate targets.
+    """
+    try:
+        info = validate_hf_model(model_id)
+        if info.architecture and info.architecture != "Unknown":
+            return LORA_TARGETS.get(info.architecture, _DEFAULT_LORA_TARGETS)
+            
+        # Fallback if architecture is Unknown (e.g. gated)
+        if "Phi" in model_id:
+             # Check for Phi-3 which is Llama-like
+            if "Phi-3" in model_id or "Phi-4" in model_id:
+                 return LORA_TARGETS["Phi3ForCausalLM"]
+            return LORA_TARGETS["PhiForCausalLM"]
+        elif "gemma" in model_id.lower():
+            return LORA_TARGETS["GemmaForCausalLM"]
+        return _DEFAULT_LORA_TARGETS
+    except Exception:
+        # Fallback for offline or errors
+        if "Phi" in model_id:
+             if "Phi-3" in model_id or "Phi-4" in model_id:
+                 return LORA_TARGETS["Phi3ForCausalLM"]
+             return LORA_TARGETS["PhiForCausalLM"]
+        elif "gemma" in model_id.lower():
+            return LORA_TARGETS["GemmaForCausalLM"]
+        return _DEFAULT_LORA_TARGETS

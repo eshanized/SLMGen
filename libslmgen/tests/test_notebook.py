@@ -17,9 +17,9 @@ from pathlib import Path
 # Import with path adjustment for test environment
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.notebook import (
-    generate_notebook,
-    _get_lora_targets,
+from core.notebook import generate_notebook
+from core.registry import (
+    get_lora_targets,
     _DEFAULT_LORA_TARGETS,
 )
 
@@ -107,17 +107,16 @@ class TestLoRATargetCorrectness:
     """Test LoRA target mappings for different model architectures."""
     
     def test_phi_models_get_correct_targets(self):
-        """Phi models should get fc1/fc2 targets."""
-        targets = _get_lora_targets("microsoft/Phi-4-mini-instruct")
-        assert "fc1" in targets
-        assert "fc2" in targets
-        assert "gate_proj" not in targets
-        assert "up_proj" not in targets
-        assert "down_proj" not in targets
+        """Phi-3/4 models should get standard targets (gate/up/down) not fc1/fc2."""
+        targets = get_lora_targets("microsoft/Phi-4-mini-instruct")
+        # Phi-4 uses Llama architecture style
+        assert "gate_proj" in targets
+        assert "up_proj" in targets
+        assert "down_proj" in targets
     
     def test_gemma_models_get_correct_targets(self):
         """Gemma models should NOT get gate_proj/up_proj/down_proj."""
-        targets = _get_lora_targets("google/gemma-2-2b-it")
+        targets = get_lora_targets("google/gemma-2-2b-it")
         assert "q_proj" in targets
         assert "k_proj" in targets
         assert "v_proj" in targets
@@ -129,7 +128,7 @@ class TestLoRATargetCorrectness:
     
     def test_llama_models_get_correct_targets(self):
         """Llama models should get standard targets including gate_proj."""
-        targets = _get_lora_targets("meta-llama/Llama-3.2-3B-Instruct")
+        targets = get_lora_targets("meta-llama/Llama-3.2-3B-Instruct")
         assert "q_proj" in targets
         assert "gate_proj" in targets
         assert "up_proj" in targets
@@ -137,17 +136,17 @@ class TestLoRATargetCorrectness:
     
     def test_mistral_models_get_correct_targets(self):
         """Mistral models should get standard targets."""
-        targets = _get_lora_targets("mistralai/Mistral-7B-Instruct-v0.3")
+        targets = get_lora_targets("mistralai/Mistral-7B-Instruct-v0.3")
         assert "gate_proj" in targets
     
     def test_qwen_models_get_correct_targets(self):
         """Qwen models should get standard targets."""
-        targets = _get_lora_targets("Qwen/Qwen2.5-3B-Instruct")
+        targets = get_lora_targets("Qwen/Qwen2.5-3B-Instruct")
         assert "gate_proj" in targets
     
     def test_unknown_model_gets_default(self):
         """Unknown models should get default targets."""
-        targets = _get_lora_targets("some-unknown/model-name")
+        targets = get_lora_targets("some-unknown/model-name")
         assert targets == _DEFAULT_LORA_TARGETS
 
 
