@@ -11,9 +11,10 @@ Creates the Colab notebook and handles downloads.
 
 import asyncio
 import logging
+import urllib.parse
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from fastapi.responses import FileResponse, Response
 
 from app.config import settings
 from app.session import session_manager
@@ -52,9 +53,20 @@ def _validate_model_id(model_id: str) -> None:
         )
 
 
+def _build_colab_url(notebook_public_url: str) -> str:
+    """
+    Build a Google Colab URL that opens a notebook from a public URL.
+    
+    Colab supports opening notebooks via URL parameter.
+    """
+    encoded_url = urllib.parse.quote(notebook_public_url, safe='')
+    return f"https://colab.research.google.com/notebooks/empty.ipynb#fileId={encoded_url}"
+
+
 @router.post("/generate-notebook", response_model=NotebookResponse)
 async def generate_training_notebook(
     request: GenerateRequest,
+    http_request: Request,
     user: AuthenticatedUser | AnonymousUser = Depends(get_optional_user)
 ):
     """
@@ -155,8 +167,10 @@ async def generate_training_notebook(
     # Build download URL with token
     download_url = f"/download/{request.session_id}?token={download_token}"
     
-    # Create GitHub Gist for Colab URL (if configured)
+    # Generate Colab URL
     colab_url = None
+    
+    # Option 1: Try GitHub Gist first (if configured)
     if settings.github_token:
         try:
             colab_url = await create_gist(
@@ -168,7 +182,15 @@ async def generate_training_notebook(
                 logger.info(f"Created Gist with Colab URL: {colab_url}")
         except Exception as e:
             logger.warning(f"Failed to create Gist: {e}")
-            # Don't fail the whole request if Gist creation fails
+            # Fall through to public URL method
+    
+    # Option 2: Use public notebook endpoint (fallback)
+    if not colab_url:
+        # Build the public notebook URL using the request's base URL
+        base_url = str(http_request.base_url).rstrip('/')
+        public_notebook_url = f"{base_url}/notebooks/{request.session_id}.ipynb"
+        colab_url = _build_colab_url(public_notebook_url)
+        logger.info(f"Generated public Colab URL: {colab_url}")
     
     return NotebookResponse(
         session_id=request.session_id,
@@ -218,4 +240,49 @@ async def download_notebook(
         path=session.notebook_path,
         filename=filename,
         media_type="application/x-ipynb+json",
+    )
+
+
+@router.get("/notebooks/{session_id}.ipynb")
+async def get_public_notebook(session_id: str):
+    """
+    Public endpoint to serve notebooks for Google Colab integration.
+    
+    This endpoint serves notebooks WITHOUT authentication so that
+    Google Colab can fetch them directly via URL.
+    
+    Note: Notebooks are only available while the session is active.
+    After session expiry (default 30 minutes), the notebook won't be accessible.
+    
+    For permanent storage, use the GitHub Gist integration by setting
+    GITHUB_TOKEN environment variable.
+    """
+    # Get session without owner check (public access)
+    session = session_manager.get(session_id)
+    
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Notebook not found or session expired. Please generate a new notebook."
+        )
+    
+    if not session.notebook_path or not Path(session.notebook_path).exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Notebook not generated yet."
+        )
+    
+    # Read notebook content
+    with open(session.notebook_path, "r", encoding="utf-8") as f:
+        notebook_content = f.read()
+    
+    # Return as JSON with proper headers for Colab
+    return Response(
+        content=notebook_content,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": f"inline; filename={Path(session.notebook_path).name}",
+            "Access-Control-Allow-Origin": "*",  # Allow Colab to fetch
+            "Cache-Control": "no-cache",  # Don't cache as session may expire
+        }
     )
