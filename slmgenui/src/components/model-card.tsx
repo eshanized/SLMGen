@@ -14,6 +14,7 @@
 import { motion } from 'framer-motion';
 import { Star, Lock } from '@/components/icons';
 import type { ModelRecommendation } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ModelCardProps {
     model: ModelRecommendation;
@@ -136,4 +137,38 @@ export function ModelCard({ model, isPrimary = false, onSelect }: ModelCardProps
             </div>
         </motion.div>
     );
+}
+
+export function ModelCardSkeleton() {
+    return (
+        <div className="rounded-2xl p-6 bg-[#1e2528]/80 border border-[#2d3437]">
+            <div className="flex items-start gap-6">
+                {/* Score Ring Skeleton */}
+                <Skeleton className="w-24 h-24 rounded-full flex-shrink-0" />
+
+                <div className="flex-1 space-y-4">
+                    {/* Title */}
+                    <Skeleton className="h-8 w-3/4" />
+
+                    {/* Tags */}
+                    <div className="flex gap-2">
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-6 w-24" />
+                    </div>
+
+                    {/* Reasons */}
+                    <div className="space-y-2 mt-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <Skeleton className="h-4 w-4/6" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 pt-4 border-t border-[#2d3437]">
+                <Skeleton className="h-4 w-1/2" />
+            </div>
+        </div>
+    )
 }

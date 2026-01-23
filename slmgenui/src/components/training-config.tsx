@@ -20,6 +20,7 @@ import {
     ChevronRight,
     Info
 } from '@/components/icons'
+import { Tooltip } from '@/components/ui/tooltip'
 
 interface TrainingConfig {
     preset: string
@@ -126,8 +127,8 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                             key={preset.id}
                             onClick={() => handlePresetChange(preset.id)}
                             className={`p-4 rounded-xl border text-left transition-all ${isSelected
-                                    ? 'bg-[#8ccf7e]/10 border-[#8ccf7e]'
-                                    : 'bg-[#1e2528] border-[#2d3437] hover:border-[#8ccf7e]/50'
+                                ? 'bg-[#8ccf7e]/10 border-[#8ccf7e]'
+                                : 'bg-[#1e2528] border-[#2d3437] hover:border-[#8ccf7e]/50'
                                 }`}
                         >
                             <Icon className={`w-5 h-5 mb-2 ${preset.color}`} />
@@ -165,7 +166,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
             {showAdvanced && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-[#1e2528] border border-[#2d3437] rounded-xl animate-in slide-in-from-top-2">
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">LoRA Rank</label>
+                        <Tooltip content="Higher rank = more parameters. Improves capacity but needs more VRAM.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                LoRA Rank <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.lora_rank}
                             onChange={(e) => handleParamChange('lora_rank', Number(e.target.value))}
@@ -178,7 +183,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                     </div>
 
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">Learning Rate</label>
+                        <Tooltip content="Controls adaptation speed. Too high = unstable; too low = slow.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                Learning Rate <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.learning_rate}
                             onChange={(e) => handleParamChange('learning_rate', Number(e.target.value))}
@@ -191,7 +200,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                     </div>
 
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">Epochs</label>
+                        <Tooltip content="Passes through the full dataset. More = better fit but risk of overfitting.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                Epochs <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.num_epochs}
                             onChange={(e) => handleParamChange('num_epochs', Number(e.target.value))}
@@ -204,7 +217,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                     </div>
 
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">Batch Size</label>
+                        <Tooltip content="Examples per step. Higher = faster but more VRAM.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                Batch Size <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.batch_size}
                             onChange={(e) => handleParamChange('batch_size', Number(e.target.value))}
@@ -217,7 +234,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                     </div>
 
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">Max Seq Length</label>
+                        <Tooltip content="Max tokens per example. Long sequences use significantly more VRAM.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                Max Seq Length <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.max_seq_length}
                             onChange={(e) => handleParamChange('max_seq_length', Number(e.target.value))}
@@ -230,7 +251,11 @@ export function TrainingConfigSelector({ value, onChange, totalTokens }: Trainin
                     </div>
 
                     <div>
-                        <label className="block text-xs text-[#8a9899] mb-1">Warmup Ratio</label>
+                        <Tooltip content="% of steps to ramp up LR. Stabilizes early training.">
+                            <label className="flex items-center gap-1 text-xs text-[#8a9899] mb-1 cursor-help w-max">
+                                Warmup Ratio <Info className="w-3 h-3" />
+                            </label>
+                        </Tooltip>
                         <select
                             value={value.warmup_ratio}
                             onChange={(e) => handleParamChange('warmup_ratio', Number(e.target.value))}

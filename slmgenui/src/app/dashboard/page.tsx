@@ -22,7 +22,8 @@ import { DashboardHeader } from '@/components/navigation';
 import { UploadZone } from '@/components/upload-zone';
 import { StatsDisplay } from '@/components/stats-display';
 import { TaskSelector } from '@/components/task-selector';
-import { ModelCard } from '@/components/model-card';
+import { toast } from 'sonner';
+import { ModelCard, ModelCardSkeleton } from '@/components/model-card';
 import { NotebookReady } from '@/components/notebook-ready';
 import { DataPreview } from '@/components/data-preview';
 import { TerminalSimulator } from '@/components/terminal-simulator';
@@ -33,8 +34,6 @@ import {
     Settings,
     Target,
     Check,
-    AlertTriangle,
-    X,
     ArrowRight,
 } from '@/components/icons';
 import type { TaskType, DeploymentTarget } from '@/lib/types';
@@ -49,22 +48,10 @@ const STEPS = [
 
 export default function DashboardPage() {
     const session = useSession();
-    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     // Get current step Index
     const currentStepIndex = STEPS.findIndex(s => s.key === session.currentStep);
-
-    /**
-     * Handle successful file upload.
-     * Now also receives the file preview content for the chat bubble display!
-     */
-    const handleUpload = useCallback((sessionId: string, stats: typeof session.stats, filePreview: string) => {
-        if (stats) {
-            session.setSession(sessionId, stats, filePreview);
-            setError(null);
-        }
-    }, [session]);
 
     // Handle configuration Complete
     const handleConfigComplete = useCallback(async (task: TaskType, deployment: DeploymentTarget) => {
@@ -73,16 +60,15 @@ export default function DashboardPage() {
         session.setTask(task);
         session.setDeployment(deployment);
         setIsLoading(true);
-        setError(null);
 
         try {
             const recommendation = await getRecommendation(session.sessionId, task, deployment);
             session.setRecommendation(recommendation);
         } catch (err) {
             if (err instanceof ApiError) {
-                setError(err.message);
+                toast.error(err.message);
             } else {
-                setError('Failed to get recommendation');
+                toast.error('Failed to get recommendation');
             }
         } finally {
             setIsLoading(false);
@@ -94,16 +80,17 @@ export default function DashboardPage() {
         if (!session.sessionId) return;
 
         setIsLoading(true);
-        setError(null);
+        const toastId = toast.loading('Generating notebook...');
 
         try {
             const notebook = await generateNotebook(session.sessionId, modelId);
             session.setNotebook(notebook);
+            toast.success('Notebook generated successfully!', { id: toastId });
         } catch (err) {
             if (err instanceof ApiError) {
-                setError(err.message);
+                toast.error(err.message, { id: toastId });
             } else {
-                setError('Failed to generate notebook');
+                toast.error('Failed to generate notebook', { id: toastId });
             }
         } finally {
             setIsLoading(false);
@@ -113,7 +100,6 @@ export default function DashboardPage() {
     // Handle Start over
     const handleStartOver = useCallback(() => {
         session.reset();
-        setError(null);
     }, [session]);
 
     return (
@@ -170,34 +156,6 @@ export default function DashboardPage() {
             {/* Main Content */}
             <main className="container mx-auto px-4 py-12">
                 <div className="max-w-4xl mx-auto">
-                    {/* Error Display */}
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -20, height: 0 }}
-                                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                                exit={{ opacity: 0, y: -20, height: 0 }}
-                                className="mb-8"
-                            >
-                                <div className="p-4 bg-[#e57474]/10 border border-[#e57474]/50 rounded-xl text-[#e57474]">
-                                    <div className="flex items-start gap-3">
-                                        <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                        <div className="flex-1">
-                                            <p className="font-medium">Something went wrong</p>
-                                            <p className="text-sm mt-1 opacity-80">{error}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setError(null)}
-                                            className="text-[#e57474] hover:text-[#dadada] transition-colors"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
                     <AnimatePresence mode="wait">
                         {/* Step 1: Upload */}
                         {session.currentStep === 'upload' && (
@@ -215,7 +173,13 @@ export default function DashboardPage() {
                                         Start by uploading your JSONL training data
                                     </p>
                                 </div>
-                                <UploadZone onUpload={handleUpload} onError={setError} />
+                                <UploadZone
+                                    onUpload={(sessionId, stats, preview) => {
+                                        session.setSession(sessionId, stats, preview);
+                                        toast.success('Dataset processed successfully!');
+                                    }}
+                                    onError={(msg) => toast.error(msg)}
+                                />
 
                                 {/* Example Format */}
                                 <div className="p-6 bg-[#1e2528]/80 rounded-xl border border-[#2d3437]">
@@ -249,9 +213,10 @@ export default function DashboardPage() {
 
                                 {/* Loading state */}
                                 {isLoading && (
-                                    <div className="text-center py-8">
-                                        <div className="w-12 h-12 border-4 border-[#8ccf7e] border-t-transparent rounded-full animate-spin mx-auto" />
-                                        <p className="text-[#8a9899] mt-4">Getting recommendations...</p>
+                                    <div className="grid gap-4 animate-in fade-in zoom-in-95 duration-500">
+                                        <ModelCardSkeleton />
+                                        <ModelCardSkeleton />
+                                        <ModelCardSkeleton />
                                     </div>
                                 )}
                             </motion.div>

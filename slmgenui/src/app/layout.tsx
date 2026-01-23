@@ -12,6 +12,7 @@ import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { AuthProvider } from '@/contexts/auth-context';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 // Primary font for the whole website (JetBrains Mono)
@@ -159,6 +160,7 @@ export default function RootLayout({
       <body className={`${jetbrainsMono.variable} antialiased`} suppressHydrationWarning>
         <AuthProvider>
           {children}
+          <Toaster position="bottom-right" theme="dark" richColors />
         </AuthProvider>
         <SpeedInsights />
       </body>
