@@ -11,7 +11,6 @@ so users don't need to do any file management.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
-import json
 import base64
 import logging
 from datetime import datetime
