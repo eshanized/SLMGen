@@ -25,6 +25,8 @@ from core import (
     generate_failure_previews,
     generate_model_card,
     compare_prompts,
+    validate_hf_model,
+    SUPPORTED_ARCHITECTURES,
 )
 from core.recommender import MODELS
 
@@ -132,6 +134,23 @@ class ModelDeepDiveResponse(BaseModel):
     good_for_tasks: list[str]
     good_for_deploy: list[str]
     min_examples: int
+
+
+class ValidateModelRequest(BaseModel):
+    model_id: str
+
+
+class ValidateModelResponse(BaseModel):
+    model_id: str
+    name: str
+    architecture: str
+    context_window: int
+    is_gated: bool
+    downloads: int
+    likes: int
+    is_compatible: bool
+    compatibility_reason: str
+    supported_architectures: list[str]
 
 
 # ============================================
@@ -333,3 +352,34 @@ async def get_model_card(session_id: str):
         description=card.description,
         markdown=card.markdown,
     )
+
+
+@router.post("/validate-model", response_model=ValidateModelResponse)
+async def validate_model_endpoint(request: ValidateModelRequest):
+    """
+    Validate a Hugging Face model ID for Unsloth compatibility.
+    
+    Checks if the model exists on Hugging Face Hub and whether its
+    architecture is supported by Unsloth for optimized fine-tuning.
+    """
+    try:
+        info = validate_hf_model(request.model_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error validating model {request.model_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to validate model")
+    
+    return ValidateModelResponse(
+        model_id=info.model_id,
+        name=info.name,
+        architecture=info.architecture,
+        context_window=info.context_window,
+        is_gated=info.is_gated,
+        downloads=info.downloads,
+        likes=info.likes,
+        is_compatible=info.is_compatible,
+        compatibility_reason=info.compatibility_reason,
+        supported_architectures=list(SUPPORTED_ARCHITECTURES),
+    )
+
