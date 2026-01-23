@@ -26,6 +26,9 @@ from .model_card import generate_model_card
 from .prompt_diff import compare_prompts
 from .reverse_prompt import infer_reverse_prompt  # FIX: C1 - Added missing module
 
+# Model Registry
+from .registry import validate_hf_model, check_compatibility, get_registry, SUPPORTED_ARCHITECTURES
+
 __all__ = [
     # Core
     "ingest_data",
@@ -44,4 +47,9 @@ __all__ = [
     "generate_model_card",
     "compare_prompts",
     "infer_reverse_prompt",  # FIX: C1 - Added missing module
+    # Model Registry
+    "validate_hf_model",
+    "check_compatibility",
+    "get_registry",
+    "SUPPORTED_ARCHITECTURES",
 ]
