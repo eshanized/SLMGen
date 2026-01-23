@@ -303,7 +303,6 @@ export default function DashboardPage() {
                                 transition={{ duration: 0.3 }}
                             >
                                 <NotebookReady
-                                    sessionId={session.sessionId!}
                                     filename={session.notebook.notebook_filename}
                                     downloadUrl={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${session.notebook.download_url}`}
                                     colabUrl={session.notebook.colab_url}

@@ -13,7 +13,7 @@ Visit [localhost:3000/signup](http://localhost:3000/signup) to create an account
 ### 2. Upload Dataset
 
 - Click **Get Started** on the dashboard
-- Drag and drop your JSONL file or click to browse
+- Drag and drop your JSONL file or click to browse (supports live client-side chat preview for first 10KB)
 - Required format: ChatML with `messages` array
 
 ```json
@@ -64,6 +64,8 @@ Or customize:
 ### 8. Generate Notebook
 
 Click **Generate Notebook** to create your Colab notebook.
+
+During generation, you'll see a **Training Terminal Simulator** that visualizes the Unsloth training commands in real-time. Once complete, a **Success Confetti** celebration confirms your notebook is ready.
 
 Options:
 - **Open in Colab** - Start training immediately
