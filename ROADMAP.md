@@ -4,10 +4,10 @@
 
 ### 1. Training Progress Tracking & Feedback Loop
 **Goal**: Keep users engaged within the ecosystem during long training jobs.
-- [ ] Real-time training logs via webhook callbacks from Colab
-- [ ] Live loss curve visualization in the dashboard
+- [x] Real-time training logs via webhook callbacks from Colab
+- [x] Live loss curve visualization in the dashboard
 - [ ] Training completion notifications (Email/Push)
-- [ ] Estimated time remaining prediction
+- [x] Estimated time remaining prediction
 
 ### 2. Universal Dataset Converter
 **Goal**: Remove friction by supporting any input format.
