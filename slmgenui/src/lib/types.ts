@@ -106,3 +106,43 @@ export interface ValidateModelResponse {
     compatibility_reason: string;
     supported_architectures: string[];
 }
+
+// =============================================================================
+// Training Progress Tracking Types
+// =============================================================================
+
+// Training session status
+export type TrainingStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+// Single training event
+export interface TrainingEvent {
+    step: number;
+    loss: number;
+    epoch: number;
+    learning_rate: number;
+    timestamp: string;
+    grad_norm?: number;
+    tokens_per_second?: number;
+    gpu_memory_used?: number;
+}
+
+// Training session status response
+export interface TrainingSessionStatus {
+    session_id: string;
+    job_id: string;
+    model_id: string;
+    status: TrainingStatus;
+    total_steps: number;
+    total_epochs: number;
+    current_step: number;
+    current_epoch: number;
+    progress_percent: number;
+    latest_loss?: number;
+    eta_seconds?: number;
+    eta_formatted?: string;
+    created_at: string;
+    started_at?: string;
+    completed_at?: string;
+    error_message?: string;
+    event_count: number;
+}
