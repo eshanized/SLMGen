@@ -183,7 +183,7 @@ async def stream_training_events(
             
             if status is None:
                 # Session was cleaned up
-                yield f"event: error\ndata: Session expired\n\n"
+                yield "event: error\ndata: Session expired\n\n"
                 break
             
             # Get new events since last step
