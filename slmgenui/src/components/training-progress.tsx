@@ -11,7 +11,7 @@
  * @copyright 2026 Eshan Roy
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Activity,
@@ -79,31 +79,7 @@ export function TrainingProgress({ sessionId, onComplete }: TrainingProgressProp
         return unsubscribe;
     }, [sessionId, status?.current_step, onComplete]);
 
-    // Status indicator component
-    const StatusIndicator = useCallback(() => {
-        if (!status) return null;
 
-        const statusConfig = {
-            pending: { icon: Clock, color: "text-yellow-400", bg: "bg-yellow-400/10", label: "Waiting to start" },
-            running: { icon: Activity, color: "text-blue-400", bg: "bg-blue-400/10", label: "Training in progress" },
-            completed: { icon: CheckCircle, color: "text-green-400", bg: "bg-green-400/10", label: "Training complete" },
-            failed: { icon: XCircle, color: "text-red-400", bg: "bg-red-400/10", label: "Training failed" },
-        };
-
-        const config = statusConfig[status.status];
-        const Icon = config.icon;
-
-        return (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}>
-                {status.status === "running" ? (
-                    <Loader2 className={`w-4 h-4 ${config.color} animate-spin`} />
-                ) : (
-                    <Icon className={`w-4 h-4 ${config.color}`} />
-                )}
-                <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
-            </div>
-        );
-    }, [status]);
 
     // Loading state
     if (isLoading) {
@@ -155,7 +131,7 @@ export function TrainingProgress({ sessionId, onComplete }: TrainingProgressProp
                         <p className="text-sm text-gray-400">{status.model_id}</p>
                     </div>
                 </div>
-                <StatusIndicator />
+                <StatusIndicator status={status} />
             </div>
 
             {/* Progress Bar */}
@@ -302,5 +278,31 @@ function LossChart({ events }: { events: TrainingEvent[] }) {
                 </linearGradient>
             </defs>
         </svg>
+    );
+}
+
+// Status indicator component
+function StatusIndicator({ status }: { status: TrainingSessionStatus | null }) {
+    if (!status) return null;
+
+    const statusConfig = {
+        pending: { icon: Clock, color: "text-yellow-400", bg: "bg-yellow-400/10", label: "Waiting to start" },
+        running: { icon: Activity, color: "text-blue-400", bg: "bg-blue-400/10", label: "Training in progress" },
+        completed: { icon: CheckCircle, color: "text-green-400", bg: "bg-green-400/10", label: "Training complete" },
+        failed: { icon: XCircle, color: "text-red-400", bg: "bg-red-400/10", label: "Training failed" },
+    };
+
+    const config = statusConfig[status.status];
+    const Icon = config.icon;
+
+    return (
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}>
+            {status.status === "running" ? (
+                <Loader2 className={`w-4 h-4 ${config.color} animate-spin`} />
+            ) : (
+                <Icon className={`w-4 h-4 ${config.color}`} />
+            )}
+            <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
+        </div>
     );
 }
