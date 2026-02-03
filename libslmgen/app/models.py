@@ -111,3 +111,76 @@ class NotebookResponse(BaseModel):
     download_url: str
     colab_url: Optional[str] = None  # only if GitHub token Configured
     message: str = "Notebook generated successfully!"
+
+
+# =============================================================================
+# Training Progress Tracking Models
+# =============================================================================
+
+
+class TrainingStatusEnum(str, Enum):
+    """Status of a training session."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class TrainingEventRequest(BaseModel):
+    """Webhook payload from Colab notebook."""
+    session_id: str
+    step: int
+    loss: float
+    epoch: int = 0
+    learning_rate: float = 0.0
+    grad_norm: Optional[float] = None
+    tokens_per_second: Optional[float] = None
+    gpu_memory_used: Optional[float] = None
+
+
+class TrainingStartRequest(BaseModel):
+    """Request to start a training session."""
+    session_id: str
+    job_id: str
+    model_id: str
+    total_steps: int
+    total_epochs: int = 1
+
+
+class TrainingCompleteRequest(BaseModel):
+    """Request to mark training as completed."""
+    session_id: str
+    error: Optional[str] = None  # If set, marks as failed
+
+
+class TrainingEventResponse(BaseModel):
+    """A single training event."""
+    step: int
+    loss: float
+    epoch: int
+    learning_rate: float
+    timestamp: str
+    grad_norm: Optional[float] = None
+    tokens_per_second: Optional[float] = None
+    gpu_memory_used: Optional[float] = None
+
+
+class TrainingStatusResponse(BaseModel):
+    """Current training session status."""
+    session_id: str
+    job_id: str
+    model_id: str
+    status: TrainingStatusEnum
+    total_steps: int
+    total_epochs: int
+    current_step: int
+    current_epoch: int
+    progress_percent: float
+    latest_loss: Optional[float] = None
+    eta_seconds: Optional[float] = None
+    eta_formatted: Optional[str] = None
+    created_at: str
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    error_message: Optional[str] = None
+    event_count: int = 0
