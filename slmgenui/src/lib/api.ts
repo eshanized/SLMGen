@@ -216,3 +216,91 @@ export async function validateModel(modelId: string): Promise<{
         body: JSON.stringify({ model_id: modelId }),
     });
 }
+
+// =============================================================================
+// Training Progress Tracking API
+// =============================================================================
+
+import type { TrainingSessionStatus, TrainingEvent } from './types';
+
+/**
+ * Get current training session status.
+ */
+export async function getTrainingStatus(sessionId: string): Promise<TrainingSessionStatus> {
+    return apiRequest<TrainingSessionStatus>(`/training/${sessionId}/status`);
+}
+
+/**
+ * Get all training events for a session.
+ */
+export async function getTrainingEvents(
+    sessionId: string,
+    sinceStep?: number
+): Promise<TrainingEvent[]> {
+    const query = sinceStep !== undefined ? `?since_step=${sinceStep}` : '';
+    return apiRequest<TrainingEvent[]>(`/training/${sessionId}/events${query}`);
+}
+
+/**
+ * Get the latest training event.
+ */
+export async function getLatestTrainingEvent(sessionId: string): Promise<TrainingEvent> {
+    return apiRequest<TrainingEvent>(`/training/${sessionId}/latest`);
+}
+
+/**
+ * Subscribe to training progress via Server-Sent Events.
+ * Returns a function to unsubscribe.
+ */
+export function subscribeToTraining(
+    sessionId: string,
+    onUpdate: (status: TrainingSessionStatus) => void,
+    onComplete: (status: TrainingSessionStatus) => void,
+    onError: (error: string) => void
+): () => void {
+    const eventSource = new EventSource(`${API_URL}/training/${sessionId}/stream`);
+
+    eventSource.onmessage = (event) => {
+        try {
+            const status = JSON.parse(event.data) as TrainingSessionStatus;
+            onUpdate(status);
+        } catch {
+            // Ignore parse errors
+        }
+    };
+
+    eventSource.addEventListener('complete', (event) => {
+        try {
+            const status = JSON.parse((event as MessageEvent).data) as TrainingSessionStatus;
+            onComplete(status);
+            eventSource.close();
+        } catch {
+            eventSource.close();
+        }
+    });
+
+    eventSource.addEventListener('error', (event) => {
+        if ((event as MessageEvent).data) {
+            onError((event as MessageEvent).data);
+        } else {
+            onError('Connection lost');
+        }
+        eventSource.close();
+    });
+
+    eventSource.onerror = () => {
+        eventSource.close();
+    };
+
+    // Return unsubscribe function
+    return () => {
+        eventSource.close();
+    };
+}
+
+/**
+ * List all active training sessions.
+ */
+export async function listTrainingSessions(): Promise<TrainingSessionStatus[]> {
+    return apiRequest<TrainingSessionStatus[]>('/training/');
+}
