@@ -108,3 +108,4 @@ generated_notebooks/
 *.tmp
 *.temp
 .cache/
+CONTEXT.md
