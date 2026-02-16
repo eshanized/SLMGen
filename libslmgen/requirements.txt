@@ -27,7 +27,13 @@ cachetools>=5.3.0
 # Hugging Face Model Hub
 huggingface_hub>=0.20.0
 
+# Redis Session Store
+redis>=5.0.0
+orjson>=3.9.0
+
 # Testing (optional)
 pytest>=7.4.0
+pytest-asyncio>=0.23.0
 httpx>=0.26.0
 python-dotenv
+fakeredis>=2.21.0

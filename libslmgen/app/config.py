@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     max_sessions: int = 25
     session_ttl_minutes: int = 30
     
+    # Redis-backed session store
+    redis_url: str = "redis://localhost:6379/0"
+    session_ttl_seconds: int = 1800  # 30 minutes (matches session_ttl_minutes)
+    
     # Security settings
     max_upload_bytes: int = 100 * 1024 * 1024  # 100 MB
     rate_limit_per_minute: int = 60  # General rate limit
