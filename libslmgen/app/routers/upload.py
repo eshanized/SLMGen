@@ -15,7 +15,7 @@ from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 
 from app.config import settings
-from app.session import session_manager
+from app.session_store import session_store
 from app.models import UploadResponse
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
 from core import ingest_data, validate_quality
@@ -47,11 +47,11 @@ async def upload_dataset(
     # Get owner ID if authenticated
     owner_id = user.id if user.is_authenticated else None
     
-    # Create session with owner
-    session = session_manager.create(owner_id=owner_id)
+    # Create session in Redis
+    session_id = await session_store.create_session(owner_id=owner_id)
     
     # Save file to disk with size limit
-    file_path = Path(settings.upload_dir) / f"{session.id}.jsonl"
+    file_path = Path(settings.upload_dir) / f"{session_id}.jsonl"
     total_size = 0
     
     try:
@@ -62,7 +62,7 @@ async def upload_dataset(
                 if total_size > settings.max_upload_bytes:
                     await f.close()
                     file_path.unlink(missing_ok=True)
-                    session_manager.delete(session.id)
+                    await session_store.delete_session(session_id)
                     raise HTTPException(
                         status_code=413,
                         detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024*1024)}MB"
@@ -73,7 +73,7 @@ async def upload_dataset(
     except HTTPException:
         raise
     except Exception as e:
-        session_manager.delete(session.id)
+        await session_store.delete_session(session_id)
         logger.error(f"Failed to save file: {e}")
         raise HTTPException(status_code=500, detail="Failed to save file")
     
@@ -82,7 +82,7 @@ async def upload_dataset(
     
     if error:
         # Cleanup on Error
-        session_manager.delete(session.id)
+        await session_store.delete_session(session_id)
         file_path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=error)
     
@@ -91,17 +91,18 @@ async def upload_dataset(
     stats.quality_score = quality_score
     stats.quality_issues = quality_issues
     
-    # Update Session
-    session.file_path = str(file_path)
-    session.original_filename = file.filename
-    session.raw_data = data
-    session.stats = stats
-    session_manager.update(session)
+    # Update session with all data
+    await session_store.update_session(session_id, {
+        "file_path": str(file_path),
+        "original_filename": file.filename,
+        "raw_data": data,
+        "stats": stats.model_dump(),
+    })
     
-    logger.info(f"Upload complete: session={session.id}, examples={stats.total_examples}, owner={owner_id}")
+    logger.info(f"Upload complete: session={session_id}, examples={stats.total_examples}, owner={owner_id}")
     
     return UploadResponse(
-        session_id=session.id,
+        session_id=session_id,
         stats=stats,
         message=f"Dataset uploaded! Found {stats.total_examples} examples.",
     )

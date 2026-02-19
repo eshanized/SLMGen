@@ -12,8 +12,8 @@ Returns detailed dataset characteristics for model selection.
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.session import session_manager
-from app.models import AnalyzeRequest, AnalyzeResponse
+from app.session_store import session_store
+from app.models import AnalyzeRequest, AnalyzeResponse, DatasetStats, DatasetCharacteristics
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
 from core import analyze_dataset, ingest_data
 
@@ -35,7 +35,7 @@ async def analyze_session(
     Respects session ownership if authenticated.
     """
     user_id = user.id if user.is_authenticated else None
-    session = session_manager.get_with_owner(request.session_id, user_id)
+    session = await session_store.get_session_with_owner(request.session_id, user_id)
     
     if session is None:
         raise HTTPException(
@@ -43,25 +43,32 @@ async def analyze_session(
             detail="Session not found, expired, or access denied. Please upload again."
         )
     
-    if session.stats is None:
+    session_data = session.get("data", {})
+    stats_dict = session_data.get("stats")
+    
+    if stats_dict is None:
         raise HTTPException(
             status_code=400,
             detail="Dataset not processed yet."
         )
     
+    stats = DatasetStats(**stats_dict)
+    
     # If we already have characteristics cached, return Them
-    if session.characteristics is not None:
+    chars_dict = session_data.get("characteristics")
+    if chars_dict is not None:
+        characteristics = DatasetCharacteristics(**chars_dict)
         return AnalyzeResponse(
-            session_id=session.id,
-            stats=session.stats,
-            characteristics=session.characteristics,
+            session_id=session["id"],
+            stats=stats,
+            characteristics=characteristics,
         )
     
     # Need to reload data if it was Cleared
-    data = session.raw_data
-    if not data and session.file_path:
+    data = session_data.get("raw_data", [])
+    if not data and session_data.get("file_path"):
         # Reload from File
-        data, _, error = ingest_data(session.file_path)
+        data, _, error = ingest_data(session_data["file_path"])
         if error:
             raise HTTPException(status_code=500, detail=f"Failed to reload data: {error}")
     
@@ -75,13 +82,14 @@ async def analyze_session(
     characteristics = analyze_dataset(data)
     
     # Cache it in Session
-    session.characteristics = characteristics
-    session_manager.update(session)
+    await session_store.update_session(request.session_id, {
+        "characteristics": characteristics.model_dump(),
+    })
     
-    logger.info(f"Analyzed session {session.id}")
+    logger.info(f"Analyzed session {session['id']}")
     
     return AnalyzeResponse(
-        session_id=session.id,
-        stats=session.stats,
+        session_id=session["id"],
+        stats=stats,
         characteristics=characteristics,
     )
