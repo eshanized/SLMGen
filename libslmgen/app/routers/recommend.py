@@ -12,8 +12,8 @@ Returns model recommendations based on task and deployment target.
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.session import session_manager
-from app.models import RecommendRequest, RecommendationResponse
+from app.session_store import session_store
+from app.models import RecommendRequest, RecommendationResponse, DatasetStats, DatasetCharacteristics
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
 from core import analyze_dataset, get_recommendations, ingest_data
 
@@ -34,7 +34,7 @@ async def get_model_recommendation(
     Respects session ownership if authenticated.
     """
     user_id = user.id if user.is_authenticated else None
-    session = session_manager.get_with_owner(request.session_id, user_id)
+    session = await session_store.get_session_with_owner(request.session_id, user_id)
     
     if session is None:
         raise HTTPException(
@@ -42,19 +42,26 @@ async def get_model_recommendation(
             detail="Session not found, expired, or access denied. Please upload again."
         )
     
-    if session.stats is None:
+    session_data = session.get("data", {})
+    stats_dict = session_data.get("stats")
+    
+    if stats_dict is None:
         raise HTTPException(
             status_code=400,
             detail="Dataset not processed yet."
         )
     
+    stats = DatasetStats(**stats_dict)
+    
     # Get or compute Characteristics
-    characteristics = session.characteristics
-    if characteristics is None:
+    chars_dict = session_data.get("characteristics")
+    if chars_dict is not None:
+        characteristics = DatasetCharacteristics(**chars_dict)
+    else:
         # Need to Analyze first
-        data = session.raw_data
-        if not data and session.file_path:
-            data, _, error = ingest_data(session.file_path)
+        data = session_data.get("raw_data", [])
+        if not data and session_data.get("file_path"):
+            data, _, error = ingest_data(session_data["file_path"])
             if error:
                 raise HTTPException(status_code=500, detail=f"Failed to reload data: {error}")
         
@@ -62,25 +69,27 @@ async def get_model_recommendation(
             raise HTTPException(status_code=400, detail="No data available.")
         
         characteristics = analyze_dataset(data)
-        session.characteristics = characteristics
     
-    # Save user Selections
-    session.task_type = request.task
-    session.deployment_target = request.deployment
-    session_manager.update(session)
+    # Save user selections + characteristics
+    await session_store.update_session(request.session_id, {
+        "characteristics": characteristics.model_dump(),
+        "task_type": request.task.value,
+        "deployment_target": request.deployment.value,
+    })
     
     # Get Recommendations
     recommendations = get_recommendations(
         task=request.task,
         deployment=request.deployment,
-        stats=session.stats,
+        stats=stats,
         characteristics=characteristics,
     )
     
     # Store the primary recommendation
-    session.selected_model_id = recommendations.primary.model_id
-    session_manager.update(session)
+    await session_store.update_session(request.session_id, {
+        "selected_model_id": recommendations.primary.model_id,
+    })
     
-    logger.info(f"Recommended {recommendations.primary.model_name} for session {session.id}")
+    logger.info(f"Recommended {recommendations.primary.model_name} for session {session['id']}")
     
     return recommendations
