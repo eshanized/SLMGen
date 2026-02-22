@@ -14,7 +14,8 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.session import session_manager
+from app.session_store import session_store
+from app.models import DatasetStats
 from core import (
     detect_personality,
     estimate_hallucination_risk,
@@ -154,17 +155,31 @@ class ValidateModelResponse(BaseModel):
 
 
 # ============================================
+# HELPER
+# ============================================
+
+async def _get_session_raw_data(session_id: str) -> list[dict]:
+    """Retrieve raw_data from a session, raising 404 if missing."""
+    session = await session_store.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found or no data")
+    
+    raw_data = session.get("data", {}).get("raw_data", [])
+    if not raw_data:
+        raise HTTPException(status_code=404, detail="Session not found or no data")
+    
+    return raw_data
+
+
+# ============================================
 # ENDPOINTS
 # ============================================
 
 @router.get("/personality/{session_id}", response_model=PersonalityResponse)
 async def get_personality(session_id: str):
     """Get dataset personality analysis."""
-    session = session_manager.get(session_id)
-    if not session or not session.raw_data:
-        raise HTTPException(status_code=404, detail="Session not found or no data")
-    
-    personality = detect_personality(session.raw_data)
+    raw_data = await _get_session_raw_data(session_id)
+    personality = detect_personality(raw_data)
     
     return PersonalityResponse(
         tone=personality.tone,
@@ -179,11 +194,8 @@ async def get_personality(session_id: str):
 @router.get("/risk/{session_id}", response_model=RiskResponse)
 async def get_risk(session_id: str):
     """Get hallucination risk estimate."""
-    session = session_manager.get(session_id)
-    if not session or not session.raw_data:
-        raise HTTPException(status_code=404, detail="Session not found or no data")
-    
-    risk = estimate_hallucination_risk(session.raw_data)
+    raw_data = await _get_session_raw_data(session_id)
+    risk = estimate_hallucination_risk(raw_data)
     
     return RiskResponse(
         score=risk.score,
@@ -196,11 +208,8 @@ async def get_risk(session_id: str):
 @router.get("/confidence/{session_id}", response_model=ConfidenceResponse)
 async def get_confidence(session_id: str):
     """Get dataset confidence score."""
-    session = session_manager.get(session_id)
-    if not session or not session.raw_data:
-        raise HTTPException(status_code=404, detail="Session not found or no data")
-    
-    conf = calculate_confidence(session.raw_data)
+    raw_data = await _get_session_raw_data(session_id)
+    conf = calculate_confidence(raw_data)
     
     return ConfidenceResponse(
         score=conf.score,
@@ -254,11 +263,8 @@ async def lint_prompt_endpoint(request: LintRequest):
 @router.get("/failure-preview/{session_id}", response_model=list[FailureCase])
 async def get_failure_preview(session_id: str):
     """Get synthetic failure cases for the dataset."""
-    session = session_manager.get(session_id)
-    if not session or not session.raw_data:
-        raise HTTPException(status_code=404, detail="Session not found or no data")
-    
-    cases = generate_failure_previews(session.raw_data)
+    raw_data = await _get_session_raw_data(session_id)
+    cases = generate_failure_previews(raw_data)
     
     return [
         FailureCase(
@@ -314,11 +320,18 @@ async def model_deep_dive(model_key: str):
 @router.get("/model-card/{session_id}", response_model=ModelCardResponse)
 async def get_model_card(session_id: str):
     """Generate a model README/card."""
-    session = session_manager.get(session_id)
-    if not session or not session.stats:
+    session = await session_store.get_session(session_id)
+    if not session:
         raise HTTPException(status_code=404, detail="Session not found or incomplete")
     
-    model_id = session.selected_model_id or "unknown"
+    session_data = session.get("data", {})
+    stats_dict = session_data.get("stats")
+    if not stats_dict:
+        raise HTTPException(status_code=404, detail="Session not found or incomplete")
+    
+    stats = DatasetStats(**stats_dict)
+    
+    model_id = session_data.get("selected_model_id", "unknown")
     model_name = "Custom Model"
     
     # Find model name
@@ -327,13 +340,14 @@ async def get_model_card(session_id: str):
             model_name = spec.name
             break
     
-    task = session.task_type.value if session.task_type else "general"
+    task = session_data.get("task_type", "general")
     
     # Get personality if available
     personality_summary = None
-    if session.raw_data:
+    raw_data = session_data.get("raw_data", [])
+    if raw_data:
         try:
-            personality = detect_personality(session.raw_data)
+            personality = detect_personality(raw_data)
             personality_summary = personality.summary
         except Exception:
             pass
@@ -342,8 +356,8 @@ async def get_model_card(session_id: str):
         model_name=model_name,
         model_id=model_id,
         task_type=task,
-        num_examples=session.stats.total_examples,
-        quality_score=session.stats.quality_score,
+        num_examples=stats.total_examples,
+        quality_score=stats.quality_score,
         personality_summary=personality_summary,
     )
     
@@ -382,4 +396,3 @@ async def validate_model_endpoint(request: ValidateModelRequest):
         compatibility_reason=info.compatibility_reason,
         supported_architectures=list(SUPPORTED_ARCHITECTURES),
     )
-

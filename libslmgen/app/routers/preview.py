@@ -13,7 +13,7 @@ from typing import List, Dict
 from pydantic import BaseModel
 from collections import Counter
 
-from app.session import session_manager
+from app.session_store import session_store
 
 router = APIRouter(prefix="/preview", tags=["preview"])
 
@@ -67,14 +67,14 @@ async def get_preview(
     elif page_size > 100:
         page_size = 100
     
-    session = session_manager.get(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
     
-    dataset = session.raw_data
+    dataset = session.get("data", {}).get("raw_data", [])
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -109,14 +109,14 @@ async def get_preview(
 @router.get("/{session_id}/distribution", response_model=FieldDistribution)
 async def get_distribution(session_id: str):
     """Get field distribution statistics for the dataset."""
-    session = session_manager.get(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
     
-    dataset = session.raw_data
+    dataset = session.get("data", {}).get("raw_data", [])
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -177,14 +177,14 @@ async def get_distribution(session_id: str):
 @router.get("/{session_id}/duplicates", response_model=DuplicateInfo)
 async def check_duplicates(session_id: str):
     """Check for duplicate examples in the dataset."""
-    session = session_manager.get(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
     
-    dataset = session.raw_data
+    dataset = session.get("data", {}).get("raw_data", [])
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
