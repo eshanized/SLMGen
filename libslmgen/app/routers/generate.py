@@ -17,8 +17,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import FileResponse, Response
 
 from app.config import settings
-from app.session import session_manager
-from app.models import GenerateRequest, NotebookResponse
+from app.session_store import session_store
+from app.models import GenerateRequest, NotebookResponse, TaskType
 from app.gist import create_gist
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
 from core import generate_notebook
@@ -77,7 +77,7 @@ async def generate_training_notebook(
     Respects session ownership if authenticated.
     """
     user_id = user.id if user.is_authenticated else None
-    session = session_manager.get_with_owner(request.session_id, user_id)
+    session = await session_store.get_session_with_owner(request.session_id, user_id)
     
     if session is None:
         raise HTTPException(
@@ -85,14 +85,17 @@ async def generate_training_notebook(
             detail="Session not found, expired, or access denied. Please upload again."
         )
     
-    if session.stats is None:
+    session_data = session.get("data", {})
+    stats_dict = session_data.get("stats")
+    
+    if stats_dict is None:
         raise HTTPException(
             status_code=400,
             detail="Dataset not processed yet."
         )
     
     # Determine which model to Use
-    model_id = request.model_id or session.selected_model_id
+    model_id = request.model_id or session_data.get("selected_model_id")
     if not model_id:
         raise HTTPException(
             status_code=400,
@@ -112,17 +115,18 @@ async def generate_training_notebook(
     model_name, model_size, is_gated = model_info
     
     # Load the dataset Content
-    if not session.file_path or not Path(session.file_path).exists():
+    file_path = session_data.get("file_path")
+    if not file_path or not Path(file_path).exists():
         raise HTTPException(
             status_code=400,
             detail="Dataset file not found."
         )
     
-    with open(session.file_path, "r", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         dataset_content = f.read()
     
     # Get task type String
-    task_type = session.task_type.value if session.task_type else "general"
+    task_type_val = session_data.get("task_type", "general")
     
     # Generate the Notebook with timeout
     try:
@@ -133,8 +137,8 @@ async def generate_training_notebook(
                 model_id=model_id,
                 model_name=model_name,
                 model_size=model_size,
-                task_type=task_type,
-                num_examples=session.stats.total_examples,
+                task_type=task_type_val,
+                num_examples=stats_dict["total_examples"],
                 is_gated=is_gated,
             ),
             timeout=GENERATION_TIMEOUT_SECONDS
@@ -156,11 +160,12 @@ async def generate_training_notebook(
     with open(notebook_path, "w", encoding="utf-8") as f:
         f.write(notebook_json)
     
-    session.notebook_path = str(notebook_path)
-    session_manager.update(session)
+    await session_store.update_session(request.session_id, {
+        "notebook_path": str(notebook_path),
+    })
     
     # Generate secure download token
-    download_token = session_manager.generate_download_token(request.session_id)
+    download_token = await session_store.generate_download_token(request.session_id)
     
     logger.info(f"Generated notebook: {notebook_filename}")
     
@@ -213,14 +218,14 @@ async def download_notebook(
     Requires valid download token from generate-notebook response.
     """
     # Validate download token first
-    if not session_manager.validate_download_token(session_id, token):
+    if not await session_store.validate_download_token(session_id, token):
         raise HTTPException(
             status_code=403,
             detail="Invalid or expired download token. Please regenerate the notebook."
         )
     
     user_id = user.id if user.is_authenticated else None
-    session = session_manager.get_with_owner(session_id, user_id)
+    session = await session_store.get_session_with_owner(session_id, user_id)
     
     if session is None:
         raise HTTPException(
@@ -228,16 +233,19 @@ async def download_notebook(
             detail="Session not found, expired, or access denied."
         )
     
-    if not session.notebook_path or not Path(session.notebook_path).exists():
+    session_data = session.get("data", {})
+    notebook_path = session_data.get("notebook_path")
+    
+    if not notebook_path or not Path(notebook_path).exists():
         raise HTTPException(
             status_code=404,
             detail="Notebook not generated yet."
         )
     
-    filename = Path(session.notebook_path).name
+    filename = Path(notebook_path).name
     
     return FileResponse(
-        path=session.notebook_path,
+        path=notebook_path,
         filename=filename,
         media_type="application/x-ipynb+json",
     )
@@ -258,7 +266,7 @@ async def get_public_notebook(session_id: str):
     GITHUB_TOKEN environment variable.
     """
     # Get session without owner check (public access)
-    session = session_manager.get(session_id)
+    session = await session_store.get_session(session_id)
     
     if session is None:
         raise HTTPException(
@@ -266,14 +274,17 @@ async def get_public_notebook(session_id: str):
             detail="Notebook not found or session expired. Please generate a new notebook."
         )
     
-    if not session.notebook_path or not Path(session.notebook_path).exists():
+    session_data = session.get("data", {})
+    notebook_path = session_data.get("notebook_path")
+    
+    if not notebook_path or not Path(notebook_path).exists():
         raise HTTPException(
             status_code=404,
             detail="Notebook not generated yet."
         )
     
     # Read notebook content
-    with open(session.notebook_path, "r", encoding="utf-8") as f:
+    with open(notebook_path, "r", encoding="utf-8") as f:
         notebook_content = f.read()
     
     # Return as JSON with proper headers for Colab
@@ -281,7 +292,7 @@ async def get_public_notebook(session_id: str):
         content=notebook_content,
         media_type="application/json",
         headers={
-            "Content-Disposition": f"inline; filename={Path(session.notebook_path).name}",
+            "Content-Disposition": f"inline; filename={Path(notebook_path).name}",
             "Access-Control-Allow-Origin": "*",  # Allow Colab to fetch
             "Cache-Control": "no-cache",  # Don't cache as session may expire
         }
