@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from slowapi.errors import RateLimitExceeded  # noqa: E402
 
 from app.config import settings  # noqa: E402
-from app.session import session_manager  # noqa: E402
+from app.session_store import session_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
 from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training  # noqa: E402
 
@@ -41,9 +41,20 @@ async def lifespan(app: FastAPI):
     logger.info(f"📁 Upload directory: {settings.upload_dir}")
     logger.info(f"🌐 Allowed origins: {settings.allowed_origins}")
     logger.info(f"🔒 Rate limit: {settings.rate_limit_per_minute}/min, Upload: {settings.upload_rate_limit_per_minute}/min")
+    
+    # Initialize Redis session store
+    try:
+        await session_store.connect()
+        logger.info(f"🗄️ Redis session store connected (TTL: {settings.session_ttl_seconds}s)")
+    except Exception as e:
+        logger.error(f"❌ Failed to connect to Redis: {e}")
+        logger.error("Session storage will be unavailable. Set REDIS_URL in your .env file.")
+    
     yield
+    
     # Shutdown
     logger.info("👋 SLMGEN Backend shutting down...")
+    await session_store.close()
 
 
 # Create the App
@@ -88,15 +99,20 @@ app.include_router(training.router)
 @app.get("/")
 async def root():
     """Health check and info Endpoint."""
+    active_sessions = await session_store.get_active_count()
     return {
         "name": "SLMGEN API",
         "version": "1.0.0",
         "status": "running",
-        "active_sessions": session_manager.active_count,
+        "active_sessions": active_sessions,
     }
 
 
 @app.get("/health")
 async def health_check():
     """Simple health Check."""
-    return {"status": "healthy"}
+    redis_healthy = await session_store.health_check()
+    return {
+        "status": "healthy" if redis_healthy else "degraded",
+        "redis": "connected" if redis_healthy else "disconnected",
+    }
