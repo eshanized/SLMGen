@@ -61,6 +61,7 @@ SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL da
 | Component | Technology |
 |-----------|------------|
 | **Backend** | Python 3.11, FastAPI, Pydantic v2 |
+| **Session Store** | Redis (async via `redis-py`) |
 | **Frontend** | Next.js 16, TypeScript, React 19, Framer Motion |
 | **Design** | Tailwind CSS, JetBrains Mono, Everblush Theme |
 | **Auth** | Supabase (OAuth + Email) |
@@ -74,15 +75,19 @@ SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL da
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
+- Redis 7+ (for session storage)
 - Supabase project
 
 ### Backend
 
 ```bash
+# Start Redis (if not already running)
+redis-server &
+
 cd libslmgen
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # Configure Supabase keys
+cp .env.example .env  # Configure Redis URL & Supabase keys
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -193,6 +198,8 @@ See [DEPLOY.md](docs/DEPLOY.md) for full instructions.
 # Backend (.env)
 ALLOWED_ORIGINS=https://slmgen.vercel.app,http://localhost:3000
 UPLOAD_DIR=/tmp/uploads
+REDIS_URL=redis://localhost:6379/0
+SESSION_TTL_SECONDS=1800
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_key
