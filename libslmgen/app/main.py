@@ -22,6 +22,7 @@ from slowapi.errors import RateLimitExceeded  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.session_store import session_store  # noqa: E402
+from app.training_store import training_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
 from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training  # noqa: E402
 
@@ -47,14 +48,23 @@ async def lifespan(app: FastAPI):
         await session_store.connect()
         logger.info(f"🗄️ Redis session store connected (TTL: {settings.session_ttl_seconds}s)")
     except Exception as e:
-        logger.error(f"❌ Failed to connect to Redis: {e}")
+        logger.error(f"❌ Failed to connect to Redis for sessions: {e}")
         logger.error("Session storage will be unavailable. Set REDIS_URL in your .env file.")
+    
+    # Initialize Redis training store
+    try:
+        await training_store.connect()
+        logger.info("📊 Redis training store connected")
+    except Exception as e:
+        logger.error(f"❌ Failed to connect to Redis for training: {e}")
+        logger.error("Training tracking will be unavailable.")
     
     yield
     
     # Shutdown
     logger.info("👋 SLMGEN Backend shutting down...")
     await session_store.close()
+    await training_store.close()
 
 
 # Create the App
