@@ -481,10 +481,11 @@ class TestStreamEvents:
 
     async def test_stream_nonexistent_session(self, store):
         """Streaming nonexistent session raises 404."""
+        session_id = valid_session_id()
+        # The method validates session_id first
         with pytest.raises(HTTPException) as exc_info:
-            # Need to consume the async generator
-            gen = store.stream_events(valid_session_id(), None)
-            await gen.__anext__()
+            async for _ in store.stream_events(session_id, None):
+                break
         assert exc_info.value.status_code == 404
 
     async def test_stream_initial_state(self, store):
@@ -511,15 +512,10 @@ class TestStreamEvents:
         await store.start_session(session_id, metadata={})
         
         # Should not yield initial state when last_id is provided
-        gen = store.stream_events(session_id, "0-0")
-        # This will block or timeout - just verify it doesn't raise
-        try:
-            # Will get a heartbeat since no new events
-            async for msg in gen:
-                assert msg["type"] in ("heartbeat", "event")
-                break
-        except Exception:
-            pass  # Expected to timeout/block
+        # Will get a heartbeat since no new events
+        async for msg in store.stream_events(session_id, "0-0"):
+            assert msg["type"] in ("heartbeat", "event")
+            break
 
 
 # ============================================

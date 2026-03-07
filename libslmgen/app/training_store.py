@@ -423,6 +423,10 @@ class RedisTrainingStore:
             approximate=True,
         )
         
+        # Handle bytes from Redis
+        if isinstance(event_id, bytes):
+            event_id = event_id.decode("utf-8")
+        
         # Get recent events for ETA calculation
         recent_events = await self.get_events(session_id, limit=20)
         
@@ -587,6 +591,14 @@ class RedisTrainingStore:
         
         result = []
         for event_id, data in events:
+            # Filter out init events
+            if data.get("init"):
+                continue
+            
+            # Handle bytes from Redis
+            if isinstance(event_id, bytes):
+                event_id = event_id.decode("utf-8")
+            
             event = {
                 "id": event_id,
                 "event": data.get("event", "progress"),
