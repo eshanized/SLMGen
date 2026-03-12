@@ -94,10 +94,42 @@ def _redis_error_handler(func):
     
     Prevents leaking internal Redis errors to clients.
     """
+    import asyncio
+    
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    def sync_wrapper(*args, **kwargs):
+        """Wrapper for sync calls - used for both regular and async functions."""
         try:
-            return await func(*args, **kwargs)
+            result = func(*args, **kwargs)
+            # If result is a coroutine, wrap it in an async function
+            if asyncio.iscoroutine(result):
+                async def async_wrapper():
+                    try:
+                        return await result
+                    except HTTPException:
+                        raise
+                    except aioredis.ConnectionError as e:
+                        logger.error(f"Redis connection error in {func.__name__}: {e}")
+                        raise HTTPException(
+                            status_code=503,
+                            detail="Training service temporarily unavailable. Please try again later.",
+                        )
+                    except aioredis.RedisError as e:
+                        logger.error(f"Redis error in {func.__name__}: {e}")
+                        raise HTTPException(
+                            status_code=503,
+                            detail="Training service temporarily unavailable. Please try again later.",
+                        )
+                    except Exception as e:
+                        logger.error(f"Unexpected error in {func.__name__}: {e}", exc_info=True)
+                        raise HTTPException(
+                            status_code=503,
+                            detail="Training service temporarily unavailable. Please try again later.",
+                        )
+                return async_wrapper()
+            # For non-coroutine results (like sync returns or generators), 
+            # we just return them - errors would propagate normally
+            return result
         except HTTPException:
             raise
         except aioredis.ConnectionError as e:
@@ -118,7 +150,7 @@ def _redis_error_handler(func):
                 status_code=503,
                 detail="Training service temporarily unavailable. Please try again later.",
             )
-    return wrapper
+    return sync_wrapper
 
 
 def _now_iso() -> str:
@@ -591,6 +623,15 @@ class RedisTrainingStore:
         
         result = []
         for event_id, data in events:
+            # Normalize data dict to use string keys (fakeredis may return bytes keys)
+            normalized = {}
+            for k, v in data.items():
+                if isinstance(k, bytes):
+                    k = k.decode("utf-8")
+                normalized[k] = v
+            
+            data = normalized
+            
             # Filter out init events
             if data.get("init"):
                 continue
@@ -599,25 +640,63 @@ class RedisTrainingStore:
             if isinstance(event_id, bytes):
                 event_id = event_id.decode("utf-8")
             
+            # Helper functions for parsing
+            def get_str(key: str) -> str:
+                val = data.get(key)
+                if isinstance(val, bytes):
+                    return val.decode("utf-8")
+                return val or ""
+            
+            def get_float(key: str) -> float:
+                val = data.get(key)
+                if isinstance(val, bytes):
+                    val = val.decode("utf-8")
+                if val is None or val == "":
+                    return 0.0
+                try:
+                    return float(val)
+                except (ValueError, TypeError):
+                    return 0.0
+            
+            def get_int(key: str) -> int:
+                val = data.get(key)
+                if isinstance(val, bytes):
+                    val = val.decode("utf-8")
+                if val is None or val == "":
+                    return 0
+                try:
+                    return int(float(val))
+                except (ValueError, TypeError):
+                    return 0
+                except (ValueError, TypeError):
+                    return 0
+            
             event = {
                 "id": event_id,
-                "event": data.get("event", "progress"),
-                "timestamp": data.get("timestamp", ""),
-                "step": int(data.get("step", 0) or 0),
-                "loss": float(data.get("loss", 0.0) or 0.0),
-                "epoch": int(data.get("epoch", 0) or 0),
-                "learning_rate": float(data.get("learning_rate", 0.0) or 0.0),
+                "event": get_str("event") or "progress",
+                "timestamp": get_str("timestamp"),
+                "step": get_int("step"),
+                "loss": get_float("loss"),
+                "epoch": get_int("epoch"),
+                "learning_rate": get_float("learning_rate"),
             }
             
             # Optional fields
-            if data.get("grad_norm"):
-                event["grad_norm"] = float(data["grad_norm"])
-            if data.get("tokens_per_second"):
-                event["tokens_per_second"] = float(data["tokens_per_second"])
-            if data.get("gpu_memory_used"):
-                event["gpu_memory_used"] = float(data["gpu_memory_used"])
-            if data.get("error"):
-                event["error"] = data["error"]
+            grad_norm = get_str("grad_norm")
+            if grad_norm:
+                event["grad_norm"] = float(grad_norm)
+            
+            tps = get_str("tokens_per_second")
+            if tps:
+                event["tokens_per_second"] = float(tps)
+            
+            gpu_mem = get_str("gpu_memory_used")
+            if gpu_mem:
+                event["gpu_memory_used"] = float(gpu_mem)
+            
+            error_str = get_str("error")
+            if error_str:
+                event["error"] = error_str
             
             result.append(event)
         
