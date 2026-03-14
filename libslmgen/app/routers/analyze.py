@@ -9,16 +9,52 @@ Returns detailed dataset characteristics for model selection.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
+import json
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
 from app.session_store import session_store
+from app.storage import storage_service
 from app.models import AnalyzeRequest, AnalyzeResponse, DatasetStats, DatasetCharacteristics
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
-from core import analyze_dataset, ingest_data
+from core import analyze_dataset
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _load_dataset(session_data: dict) -> list[dict]:
+    """
+    Load dataset from session or storage.
+    
+    Priority:
+    1. raw_data in session
+    2. Download from storage using dataset_path
+    """
+    data = session_data.get("raw_data", [])
+    if data:
+        return data
+    
+    dataset_path = session_data.get("dataset_path")
+    if dataset_path:
+        try:
+            file_bytes = await storage_service.download_file(dataset_path)
+            content = file_bytes.decode("utf-8")
+            dataset = []
+            for line in content.strip().split("\n"):
+                line = line.strip()
+                if line:
+                    dataset.append(json.loads(line))
+            return dataset
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to reload dataset from storage: {e}"
+            )
+    
+    return []
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
@@ -54,7 +90,7 @@ async def analyze_session(
     
     stats = DatasetStats(**stats_dict)
     
-    # If we already have characteristics cached, return Them
+    # If we already have characteristics cached, return them
     chars_dict = session_data.get("characteristics")
     if chars_dict is not None:
         characteristics = DatasetCharacteristics(**chars_dict)
@@ -64,13 +100,8 @@ async def analyze_session(
             characteristics=characteristics,
         )
     
-    # Need to reload data if it was Cleared
-    data = session_data.get("raw_data", [])
-    if not data and session_data.get("file_path"):
-        # Reload from File
-        data, _, error = ingest_data(session_data["file_path"])
-        if error:
-            raise HTTPException(status_code=500, detail=f"Failed to reload data: {error}")
+    # Need to load data from session or storage
+    data = await _load_dataset(session_data)
     
     if not data:
         raise HTTPException(
@@ -78,10 +109,10 @@ async def analyze_session(
             detail="No data available for analysis."
         )
     
-    # Run Analysis
+    # Run analysis
     characteristics = analyze_dataset(data)
     
-    # Cache it in Session
+    # Cache it in session
     await session_store.update_session(request.session_id, {
         "characteristics": characteristics.model_dump(),
     })

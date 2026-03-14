@@ -9,16 +9,52 @@ Returns model recommendations based on task and deployment target.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
+import json
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
 from app.session_store import session_store
+from app.storage import storage_service
 from app.models import RecommendRequest, RecommendationResponse, DatasetStats, DatasetCharacteristics
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
-from core import analyze_dataset, get_recommendations, ingest_data
+from core import analyze_dataset, get_recommendations
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _load_dataset_for_analysis(session_data: dict) -> list[dict]:
+    """
+    Load dataset for analysis.
+    
+    Priority:
+    1. raw_data in session
+    2. Download from storage
+    """
+    data = session_data.get("raw_data", [])
+    if data:
+        return data
+    
+    dataset_path = session_data.get("dataset_path")
+    if dataset_path:
+        try:
+            file_bytes = await storage_service.download_file(dataset_path)
+            content = file_bytes.decode("utf-8")
+            dataset = []
+            for line in content.strip().split("\n"):
+                line = line.strip()
+                if line:
+                    dataset.append(json.loads(line))
+            return dataset
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to load dataset from storage: {e}"
+            )
+    
+    return []
 
 
 @router.post("/recommend", response_model=RecommendationResponse)
@@ -53,17 +89,13 @@ async def get_model_recommendation(
     
     stats = DatasetStats(**stats_dict)
     
-    # Get or compute Characteristics
+    # Get or compute characteristics
     chars_dict = session_data.get("characteristics")
     if chars_dict is not None:
         characteristics = DatasetCharacteristics(**chars_dict)
     else:
-        # Need to Analyze first
-        data = session_data.get("raw_data", [])
-        if not data and session_data.get("file_path"):
-            data, _, error = ingest_data(session_data["file_path"])
-            if error:
-                raise HTTPException(status_code=500, detail=f"Failed to reload data: {error}")
+        # Need to analyze first
+        data = await _load_dataset_for_analysis(session_data)
         
         if not data:
             raise HTTPException(status_code=400, detail="No data available.")
@@ -77,7 +109,7 @@ async def get_model_recommendation(
         "deployment_target": request.deployment.value,
     })
     
-    # Get Recommendations
+    # Get recommendations
     recommendations = get_recommendations(
         task=request.task,
         deployment=request.deployment,

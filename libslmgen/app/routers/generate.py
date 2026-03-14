@@ -4,20 +4,22 @@
 Generate Router.
 
 Creates the Colab notebook and handles downloads.
+Now uses object storage (Supabase) instead of local filesystem.
 """
 # Author: Eshan Roy <eshanized@proton.me>
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
 import asyncio
+import json
 import logging
 import urllib.parse
-from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 
 from app.config import settings
 from app.session_store import session_store
+from app.storage import storage_service, BUCKET_NOTEBOOKS
 from app.models import GenerateRequest, NotebookResponse, TaskType
 from app.gist import create_gist
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser
@@ -63,6 +65,38 @@ def _build_colab_url(notebook_public_url: str) -> str:
     return f"https://colab.research.google.com/notebooks/empty.ipynb#fileId={encoded_url}"
 
 
+async def _load_dataset_content(session_data: dict) -> str:
+    """
+    Load dataset content from storage or session.
+    
+    Priority:
+    1. raw_data in session (preferred - already in memory)
+    2. Download from storage
+    
+    Returns:
+        Dataset content as JSONL string
+    """
+    # Try raw_data first (already parsed in session)
+    raw_data = session_data.get("raw_data")
+    if raw_data and isinstance(raw_data, list):
+        # Convert back to JSONL format
+        lines = []
+        for entry in raw_data:
+            lines.append(json.dumps(entry))
+        return "\n".join(lines)
+    
+    # Fall back to storage
+    dataset_path = session_data.get("dataset_path")
+    if dataset_path:
+        file_bytes = await storage_service.download_file(dataset_path)
+        return file_bytes.decode("utf-8")
+    
+    raise HTTPException(
+        status_code=400,
+        detail="Dataset not available."
+    )
+
+
 @router.post("/generate-notebook", response_model=NotebookResponse)
 async def generate_training_notebook(
     request: GenerateRequest,
@@ -75,6 +109,9 @@ async def generate_training_notebook(
     If model_id is not provided, uses the primary recommendation.
     
     Respects session ownership if authenticated.
+    
+    The notebook is uploaded to object storage (Supabase) and
+    a signed download URL is returned.
     """
     user_id = user.id if user.is_authenticated else None
     session = await session_store.get_session_with_owner(request.session_id, user_id)
@@ -94,7 +131,7 @@ async def generate_training_notebook(
             detail="Dataset not processed yet."
         )
     
-    # Determine which model to Use
+    # Determine which model to use
     model_id = request.model_id or session_data.get("selected_model_id")
     if not model_id:
         raise HTTPException(
@@ -105,7 +142,7 @@ async def generate_training_notebook(
     # Validate model_id exists
     _validate_model_id(model_id)
     
-    # Get Model info
+    # Get model info
     model_info = _get_model_info(model_id)
     if model_info is None:
         raise HTTPException(
@@ -114,21 +151,22 @@ async def generate_training_notebook(
         )
     model_name, model_size, is_gated = model_info
     
-    # Load the dataset Content
-    file_path = session_data.get("file_path")
-    if not file_path or not Path(file_path).exists():
+    # Load the dataset content
+    try:
+        dataset_content = await _load_dataset_content(session_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to load dataset: {e}")
         raise HTTPException(
-            status_code=400,
-            detail="Dataset file not found."
+            status_code=500,
+            detail="Failed to load dataset."
         )
     
-    with open(file_path, "r", encoding="utf-8") as f:
-        dataset_content = f.read()
-    
-    # Get task type String
+    # Get task type string
     task_type_val = session_data.get("task_type", "general")
     
-    # Generate the Notebook with timeout
+    # Generate the notebook with timeout
     try:
         notebook_json = await asyncio.wait_for(
             asyncio.to_thread(
@@ -153,15 +191,30 @@ async def generate_training_notebook(
         logger.error(f"Failed to generate notebook: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate notebook: {e}")
     
-    # Save notebook to File
+    # Upload notebook to object storage
     notebook_filename = f"finetune_{model_name.lower().replace(' ', '_')}_{request.session_id[:8]}.ipynb"
-    notebook_path = Path(settings.upload_dir) / notebook_filename
+    notebook_bytes = notebook_json.encode("utf-8")
     
-    with open(notebook_path, "w", encoding="utf-8") as f:
-        f.write(notebook_json)
+    try:
+        notebook_path = await storage_service.upload_notebook(
+            file_bytes=notebook_bytes,
+            session_id=request.session_id,
+            user_id=user_id,
+            original_filename=notebook_filename,
+        )
+        logger.info(f"Uploaded notebook to storage: {notebook_path}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to upload notebook to storage: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Failed to upload notebook to storage."
+        )
     
+    # Update session with notebook path
     await session_store.update_session(request.session_id, {
-        "notebook_path": str(notebook_path),
+        "notebook_path": notebook_path,
     })
     
     # Generate secure download token
@@ -187,15 +240,21 @@ async def generate_training_notebook(
                 logger.info(f"Created Gist with Colab URL: {colab_url}")
         except Exception as e:
             logger.warning(f"Failed to create Gist: {e}")
-            # Fall through to public URL method
     
-    # Option 2: Use public notebook endpoint (fallback)
+    # Option 2: Use signed URL for storage (fallback)
     if not colab_url:
-        # Build the public notebook URL using the request's base URL
-        base_url = str(http_request.base_url).rstrip('/')
-        public_notebook_url = f"{base_url}/notebooks/{request.session_id}.ipynb"
-        colab_url = _build_colab_url(public_notebook_url)
-        logger.info(f"Generated public Colab URL: {colab_url}")
+        try:
+            # Generate a long-lived signed URL for Colab
+            colab_url = await storage_service.get_signed_url(
+                notebook_path,
+                expires_in=86400,  # 24 hours
+            )
+            # Wrap in Colab format
+            encoded_url = urllib.parse.quote(colab_url, safe='')
+            colab_url = f"https://colab.research.google.com/notebooks/empty.ipynb#fileId={encoded_url}"
+            logger.info(f"Generated Colab URL with signed storage URL")
+        except Exception as e:
+            logger.warning(f"Failed to generate signed URL: {e}")
     
     return NotebookResponse(
         session_id=request.session_id,
@@ -213,9 +272,10 @@ async def download_notebook(
     user: AuthenticatedUser | AnonymousUser = Depends(get_optional_user)
 ):
     """
-    Download the generated notebook File.
+    Download the generated notebook file.
     
     Requires valid download token from generate-notebook response.
+    Returns a signed URL for downloading the notebook.
     """
     # Validate download token first
     if not await session_store.validate_download_token(session_id, token):
@@ -236,19 +296,30 @@ async def download_notebook(
     session_data = session.get("data", {})
     notebook_path = session_data.get("notebook_path")
     
-    if not notebook_path or not Path(notebook_path).exists():
+    if not notebook_path:
         raise HTTPException(
             status_code=404,
             detail="Notebook not generated yet."
         )
     
-    filename = Path(notebook_path).name
+    # Get signed URL for download
+    try:
+        signed_url = await storage_service.get_signed_url(
+            notebook_path,
+            expires_in=3600,  # 1 hour
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate download URL: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Failed to generate download URL."
+        )
     
-    return FileResponse(
-        path=notebook_path,
-        filename=filename,
-        media_type="application/x-ipynb+json",
-    )
+    # Return redirect to signed URL
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=signed_url, status_code=302)
 
 
 @router.get("/notebooks/{session_id}.ipynb")
@@ -259,8 +330,8 @@ async def get_public_notebook(session_id: str):
     This endpoint serves notebooks WITHOUT authentication so that
     Google Colab can fetch them directly via URL.
     
-    Note: Notebooks are only available while the session is active.
-    After session expiry (default 30 minutes), the notebook won't be accessible.
+    Note: Notebooks are stored in Supabase Storage and remain
+    accessible until explicitly deleted.
     
     For permanent storage, use the GitHub Gist integration by setting
     GITHUB_TOKEN environment variable.
@@ -271,29 +342,41 @@ async def get_public_notebook(session_id: str):
     if session is None:
         raise HTTPException(
             status_code=404,
-            detail="Notebook not found or session expired. Please generate a new notebook."
+            detail="Notebook not found. Please generate a new notebook."
         )
     
     session_data = session.get("data", {})
     notebook_path = session_data.get("notebook_path")
     
-    if not notebook_path or not Path(notebook_path).exists():
+    if not notebook_path:
         raise HTTPException(
             status_code=404,
             detail="Notebook not generated yet."
         )
     
-    # Read notebook content
-    with open(notebook_path, "r", encoding="utf-8") as f:
-        notebook_content = f.read()
+    # Download notebook content from storage
+    try:
+        notebook_bytes = await storage_service.download_file(notebook_path)
+        notebook_content = notebook_bytes.decode("utf-8")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to download notebook from storage: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve notebook."
+        )
+    
+    # Extract filename from path
+    filename = notebook_path.split("/")[-1] if "/" in notebook_path else f"{session_id}.ipynb"
     
     # Return as JSON with proper headers for Colab
     return Response(
         content=notebook_content,
         media_type="application/json",
         headers={
-            "Content-Disposition": f"inline; filename={Path(notebook_path).name}",
+            "Content-Disposition": f"inline; filename={filename}",
             "Access-Control-Allow-Origin": "*",  # Allow Colab to fetch
-            "Cache-Control": "no-cache",  # Don't cache as session may expire
+            "Cache-Control": "no-cache",
         }
     )
