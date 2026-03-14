@@ -39,7 +39,6 @@ from pathlib import Path
 from typing import Optional
 
 import aiofiles
-import aiohttp
 from fastapi import HTTPException
 
 from .config import settings

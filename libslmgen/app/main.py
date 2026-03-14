@@ -16,12 +16,14 @@ load_dotenv()
 
 import logging  # noqa: E402
 from contextlib import asynccontextmanager  # noqa: E402
-from fastapi import FastAPI  # noqa: E402
+from fastapi import FastAPI, Response  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
 from slowapi.errors import RateLimitExceeded  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.session_store import session_store  # noqa: E402
+from app.storage import storage_service, serve_local_file  # noqa: E402
 from app.training_store import training_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
 from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training  # noqa: E402
@@ -126,3 +128,27 @@ async def health_check():
         "status": "healthy" if redis_healthy else "degraded",
         "redis": "connected" if redis_healthy else "disconnected",
     }
+
+
+@app.get("/storage/local/{path:path}")
+async def get_local_file(path: str):
+    """
+    Serve files from local storage (development only).
+    
+    This endpoint is only available when using local filesystem fallback.
+    In production, files are served via Supabase Storage signed URLs.
+    """
+    if storage_service.is_local_fallback:
+        try:
+            content, content_type = await serve_local_file(path)
+            return Response(content=content, media_type=content_type)
+        except Exception as e:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "File not found."},
+            )
+    else:
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Local file serving not available in production."},
+        )
