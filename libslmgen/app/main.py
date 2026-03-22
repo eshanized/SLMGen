@@ -26,7 +26,7 @@ from app.session_store import session_store  # noqa: E402
 from app.storage import storage_service, serve_local_file  # noqa: E402
 from app.training_store import training_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
-from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training  # noqa: E402
+from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training, pipeline  # noqa: E402
 
 # Setup Logging
 logging.basicConfig(
@@ -103,6 +103,7 @@ app.include_router(analyze.router, tags=["Analysis"])
 app.include_router(recommend.router, tags=["Recommendation"])
 app.include_router(generate.router, tags=["Generation"])
 app.include_router(jobs.router)
+app.include_router(pipeline.router)
 app.include_router(preview.router)
 app.include_router(advanced.router, tags=["Advanced Features"])
 app.include_router(training.router)
