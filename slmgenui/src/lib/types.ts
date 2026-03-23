@@ -146,3 +146,86 @@ export interface TrainingSessionStatus {
     error_message?: string;
     event_count: number;
 }
+
+// =============================================================================
+// Inference Playground Types
+// =============================================================================
+
+// Inference request payload
+export interface InferenceRequest {
+    model_id: string;
+    prompt: string;
+    system_prompt?: string;
+    temperature?: number;
+    max_tokens?: number;
+}
+
+// Inference response
+export interface InferenceResponse {
+    model_id: string;
+    output: string;
+    latency_ms: number;
+    tokens: number;
+    finish_reason: string;
+    error?: string;
+}
+
+// Comparison request payload
+export interface CompareRequest {
+    base_model_id: string;
+    tuned_model_id?: string;
+    prompt: string;
+    system_prompt?: string;
+    temperature?: number;
+    max_tokens?: number;
+}
+
+// Comparison metrics
+export interface ComparisonMetrics {
+    base_latency_ms: number;
+    tuned_latency_ms: number;
+    latency_delta_ms: number;
+    base_tokens: number;
+    tuned_tokens: number;
+    token_delta: number;
+    similarity_score: number;
+    base_risk_score: number;
+    tuned_risk_score: number;
+    base_risk_level: string;
+    tuned_risk_level: string;
+    quality_score: number;
+}
+
+// Comparison response
+export interface ComparisonResponse {
+    base_model_id: string;
+    tuned_model_id?: string;
+    base_output: string;
+    tuned_output: string;
+    base_latency_ms: number;
+    tuned_latency_ms: number;
+    metrics: ComparisonMetrics;
+    error?: string;
+}
+
+// Model info for inference
+export interface ModelInfo {
+    model_id: string;
+    name: string;
+    size: string;
+    is_gated: boolean;
+    context_window: number;
+}
+
+// List models response
+export interface ListModelsResponse {
+    models: ModelInfo[];
+}
+
+// Prompt history item
+export interface PromptHistoryItem {
+    id: string;
+    prompt: string;
+    systemPrompt?: string;
+    timestamp: Date;
+}

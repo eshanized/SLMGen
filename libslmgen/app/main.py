@@ -26,7 +26,7 @@ from app.session_store import session_store  # noqa: E402
 from app.storage import storage_service, serve_local_file  # noqa: E402
 from app.training_store import training_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
-from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training, pipeline  # noqa: E402
+from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training, pipeline, inference  # noqa: E402
 
 # Setup Logging
 logging.basicConfig(
@@ -67,6 +67,11 @@ async def lifespan(app: FastAPI):
     logger.info("👋 SLMGEN Backend shutting down...")
     await session_store.close()
     await training_store.close()
+    
+    # Shutdown inference engine
+    from app.inference import shutdown_inference_engine
+    await shutdown_inference_engine()
+    logger.info("🔌 Inference engine closed")
 
 
 # Create the App
@@ -107,6 +112,7 @@ app.include_router(pipeline.router)
 app.include_router(preview.router)
 app.include_router(advanced.router, tags=["Advanced Features"])
 app.include_router(training.router)
+app.include_router(inference.router, tags=["Inference"])
 
 
 @app.get("/")

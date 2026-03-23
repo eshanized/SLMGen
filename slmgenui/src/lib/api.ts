@@ -304,3 +304,54 @@ export function subscribeToTraining(
 export async function listTrainingSessions(): Promise<TrainingSessionStatus[]> {
     return apiRequest<TrainingSessionStatus[]>('/training/');
 }
+
+// =============================================================================
+// Inference Playground API
+// =============================================================================
+
+import type {
+    InferenceRequest,
+    InferenceResponse,
+    CompareRequest,
+    ComparisonResponse,
+    ListModelsResponse,
+} from './types';
+
+/**
+ * Run inference on a single model.
+ */
+export async function runInference(
+    request: InferenceRequest,
+    retries: number = 2
+): Promise<InferenceResponse> {
+    return apiRequest<InferenceResponse>('/inference/run', {
+        method: 'POST',
+        body: JSON.stringify(request),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    }, retries);
+}
+
+/**
+ * Compare outputs from base and tuned models.
+ */
+export async function compareInference(
+    request: CompareRequest,
+    retries: number = 2
+): Promise<ComparisonResponse> {
+    return apiRequest<ComparisonResponse>('/inference/compare', {
+        method: 'POST',
+        body: JSON.stringify(request),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    }, retries);
+}
+
+/**
+ * Get list of available models for inference.
+ */
+export async function listInferenceModels(): Promise<ListModelsResponse> {
+    return apiRequest<ListModelsResponse>('/inference/models');
+}
