@@ -13,15 +13,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
     Play, 
-    RefreshCw, 
     Copy, 
     Check, 
     Clock, 
     Zap, 
     Target,
     AlertTriangle,
-    Lightbulb,
-    ChevronDown,
     MessageSquare,
     Bot,
     Loader2
@@ -198,11 +195,6 @@ export default function PlaygroundPage() {
         } catch {
             toast.error('Failed to copy');
         }
-    };
-
-    // Get risk color
-    const getRiskColor = (level: string) => {
-        return RISK_COLORS[level as keyof typeof RISK_COLORS] || RISK_COLORS.medium;
     };
 
     return (
