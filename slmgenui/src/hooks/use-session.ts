@@ -17,6 +17,12 @@
  * - notebook: Generated notebook info
  * - currentStep: Which step of the wizard we're on
  * 
+ * ASYNC JOB STATE:
+ * - jobStatus: Current job processing status
+ * - jobProgress: Progress through pipeline (0-100)
+ * - currentPipelineStep: Current step being processed
+ * - jobError: Error message if job failed
+ * 
  * @author Eshan Roy <eshanized@proton.me>
  * @contributor Vedant Singh Rajput <teleported0722@gmail.com>
  * @license MIT
@@ -25,7 +31,7 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type {
     WizardStep,
     DatasetStats,
@@ -33,7 +39,11 @@ import type {
     DeploymentTarget,
     RecommendationResponse,
     NotebookResponse,
+    JobStatus,
+    PipelineStep,
+    JobStatusResponse,
 } from '@/lib/types';
+import { pollJobStatus } from '@/lib/api';
 
 // ============================================================================
 // TYPES
@@ -53,6 +63,13 @@ export interface SessionState {
     recommendation: RecommendationResponse | null;
     notebook: NotebookResponse | null;
     currentStep: WizardStep;
+    /** Async job state */
+    jobStatus: JobStatus;
+    jobProgress: number;
+    currentPipelineStep: PipelineStep;
+    jobError: string | null;
+    /** Cleanup function for polling */
+    _pollCleanup: (() => void) | null;
 }
 
 // ============================================================================
@@ -68,6 +85,11 @@ const initialState: SessionState = {
     recommendation: null,
     notebook: null,
     currentStep: 'upload',
+    jobStatus: 'idle',
+    jobProgress: 0,
+    currentPipelineStep: 'ingest',
+    jobError: null,
+    _pollCleanup: null,
 };
 
 const STORAGE_KEY = 'slmgen-session';
@@ -91,7 +113,15 @@ function loadFromStorage(): SessionState {
 
     try {
         const saved = sessionStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : initialState;
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Clean up polling state when restoring
+            if (parsed._pollCleanup) {
+                parsed._pollCleanup = null;
+            }
+            return { ...initialState, ...parsed };
+        }
+        return initialState;
     } catch {
         // JSON parse failed or storage is corrupted
         return initialState;
@@ -109,9 +139,20 @@ export function useSession() {
     // This is like an "auto-save" feature
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            // Don't persist internal cleanup functions
+            const { _pollCleanup, ...persistable } = state;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
         }
     }, [state]);
+
+    // Cleanup polling on unmount
+    useEffect(() => {
+        return () => {
+            if (state._pollCleanup) {
+                state._pollCleanup();
+            }
+        };
+    }, []);
 
     // ========================================================================
     // SETTERS - These are the functions components call to update state
@@ -120,15 +161,115 @@ export function useSession() {
     /**
      * Called after successful upload.
      * Now includes filePreview for the chat bubble component!
+     * Also starts job status polling.
      */
-    const setSession = useCallback((sessionId: string, stats: DatasetStats, filePreview?: string) => {
+    const setSession = useCallback((
+        sessionId: string,
+        stats: DatasetStats | null,
+        filePreview?: string,
+        startPolling: boolean = true
+    ) => {
+        setState(prev => {
+            // Clean up existing polling if any
+            if (prev._pollCleanup) {
+                prev._pollCleanup();
+            }
+            return {
+                ...prev,
+                sessionId,
+                stats,
+                filePreview: filePreview || null,
+                currentStep: 'configure',
+                jobStatus: startPolling ? 'queued' : 'idle',
+                jobProgress: 0,
+                currentPipelineStep: 'ingest',
+                jobError: null,
+                _pollCleanup: null,
+            };
+        });
+    }, []);
+
+    /**
+     * Set job status from polling response.
+     */
+    const setJobStatus = useCallback((response: JobStatusResponse) => {
+        setState(prev => {
+            // Check if this response indicates completion
+            if (response.status === 'completed' && prev._pollCleanup) {
+                prev._pollCleanup();
+            }
+
+            return {
+                ...prev,
+                jobStatus: response.status,
+                jobProgress: Math.round(response.progress * 100),
+                currentPipelineStep: response.current_step,
+                jobError: response.error || null,
+                stats: response.stats || prev.stats,
+                recommendation: response.recommendations || prev.recommendation,
+                notebook: response.notebook_path ? {
+                    session_id: prev.sessionId || '',
+                    notebook_filename: 'training.ipynb',
+                    download_url: `/download/${prev.sessionId}`,
+                    colab_url: null,
+                    message: 'Notebook ready',
+                } : prev.notebook,
+            };
+        });
+    }, []);
+
+    /**
+     * Start polling for job status.
+     */
+    const startJobPolling = useCallback((
+        sessionId: string,
+        onComplete?: (status: JobStatusResponse) => void,
+        onError?: (error: string) => void
+    ) => {
+        // Clean up existing polling
+        setState(prev => {
+            if (prev._pollCleanup) {
+                prev._pollCleanup();
+            }
+            return { ...prev, _pollCleanup: null };
+        });
+
+        const cleanup = pollJobStatus(
+            sessionId,
+            (status) => setJobStatus(status),
+            (status) => {
+                setJobStatus(status);
+                onComplete?.(status);
+            },
+            (error) => {
+                setState(prev => ({
+                    ...prev,
+                    jobStatus: 'failed',
+                    jobError: error,
+                }));
+                onError?.(error);
+            },
+            2000, // Poll every 2 seconds
+            150   // Max 5 minutes
+        );
+
         setState(prev => ({
             ...prev,
-            sessionId,
-            stats,
-            filePreview: filePreview || null,
-            currentStep: 'configure',
+            jobStatus: 'processing',
+            _pollCleanup: cleanup,
         }));
+    }, [setJobStatus]);
+
+    /**
+     * Stop polling for job status.
+     */
+    const stopJobPolling = useCallback(() => {
+        setState(prev => {
+            if (prev._pollCleanup) {
+                prev._pollCleanup();
+            }
+            return { ...prev, _pollCleanup: null };
+        });
     }, []);
 
     /** Set the selected task type */
@@ -166,7 +307,13 @@ export function useSession() {
 
     /** Reset everything - starts fresh */
     const reset = useCallback(() => {
-        setState(initialState);
+        setState(prev => {
+            // Clean up polling if any
+            if (prev._pollCleanup) {
+                prev._pollCleanup();
+            }
+            return initialState;
+        });
         if (typeof window !== 'undefined') {
             sessionStorage.removeItem(STORAGE_KEY);
         }
@@ -180,6 +327,12 @@ export function useSession() {
     // Only if user has selected both task and deployment
     const canProceedFromConfigure = state.task !== null && state.deployment !== null;
 
+    // Is the job still processing?
+    const isJobProcessing = state.jobStatus === 'queued' || state.jobStatus === 'processing';
+
+    // Progress percentage for display
+    const progressPercent = Math.round(state.jobProgress);
+
     // ========================================================================
     // RETURN
     // ========================================================================
@@ -189,6 +342,9 @@ export function useSession() {
         ...state,
         // Setters
         setSession,
+        setJobStatus,
+        startJobPolling,
+        stopJobPolling,
         setTask,
         setDeployment,
         setRecommendation,
@@ -197,5 +353,7 @@ export function useSession() {
         reset,
         // Computed
         canProceedFromConfigure,
+        isJobProcessing,
+        progressPercent,
     };
 }

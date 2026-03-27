@@ -229,3 +229,41 @@ export interface PromptHistoryItem {
     systemPrompt?: string;
     timestamp: Date;
 }
+
+// =============================================================================
+// Job Pipeline Types
+// =============================================================================
+
+// Job status values
+export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed';
+
+// Pipeline step values
+export type PipelineStep = 'ingest' | 'analyze' | 'recommend' | 'generate';
+
+// Step status within pipeline
+export interface StepStatus {
+    ingest: 'completed' | 'processing' | 'pending' | 'queued' | 'failed';
+    analyze: 'completed' | 'processing' | 'pending' | 'queued' | 'failed';
+    recommend: 'completed' | 'processing' | 'pending' | 'queued' | 'failed';
+    generate: 'completed' | 'processing' | 'pending' | 'queued' | 'failed';
+}
+
+// Job status response from pipeline endpoint
+export interface JobStatusResponse {
+    session_id: string;
+    status: JobStatus;
+    current_step: PipelineStep;
+    progress: number;  // 0.0 to 1.0
+    steps?: StepStatus;
+    stats?: DatasetStats;
+    recommendations?: RecommendationResponse;
+    notebook_path?: string;
+    error?: string;
+}
+
+// Upload response with async processing
+export interface UploadResponseAsync {
+    session_id: string;
+    stats: DatasetStats | null;
+    message: string;
+}
