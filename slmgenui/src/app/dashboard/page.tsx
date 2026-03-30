@@ -20,7 +20,7 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '@/hooks/use-session';
 import { DashboardHeader } from '@/components/navigation';
@@ -35,10 +35,7 @@ import { TerminalSimulator } from '@/components/terminal-simulator';
 import { CustomModelInput } from '@/components/custom-model-input';
 import { 
     uploadDatasetAsync, 
-    getRecommendation, 
-    generateNotebook, 
     getJobStatus,
-    runPipeline,
     triggerAnalysis,
     triggerRecommendations,
     triggerGeneration,
@@ -154,7 +151,7 @@ export default function DashboardPage() {
                     toast.error(finalStatus.error || 'Processing failed');
                     return;
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Failed to check processing status');
                 return;
             }
@@ -245,14 +242,14 @@ export default function DashboardPage() {
             await triggerAnalysis(session.sessionId);
             session.startJobPolling(session.sessionId,
                 () => {},
-                (status) => {
+                () => {
                     toast.success('Processing complete!');
                 },
                 (error) => {
                     toast.error(`Retry failed: ${error}`);
                 }
             );
-        } catch (err) {
+        } catch {
             toast.error('Failed to retry processing');
         } finally {
             setIsProcessing(false);
@@ -358,10 +355,6 @@ export default function DashboardPage() {
                                     </p>
                                 </div>
                                 <UploadZone
-                                    onUpload={(sessionId, stats, preview) => {
-                                        // This is the old synchronous callback
-                                        // We now use the async handleUpload instead
-                                    }}
                                     onError={(msg) => toast.error(msg)}
                                     onFileSelect={handleUpload}
                                     isProcessing={isProcessing}

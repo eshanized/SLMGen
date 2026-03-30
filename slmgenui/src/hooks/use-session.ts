@@ -31,7 +31,7 @@
 
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type {
     WizardStep,
     DatasetStats,
@@ -223,6 +223,7 @@ export function useSession() {
      */
     const startJobPolling = useCallback((
         sessionId: string,
+        onUpdate?: (status: JobStatusResponse) => void,
         onComplete?: (status: JobStatusResponse) => void,
         onError?: (error: string) => void
     ) => {
@@ -236,7 +237,10 @@ export function useSession() {
 
         const cleanup = pollJobStatus(
             sessionId,
-            (status) => setJobStatus(status),
+            (status) => {
+                setJobStatus(status);
+                onUpdate?.(status);
+            },
             (status) => {
                 setJobStatus(status);
                 onComplete?.(status);

@@ -66,6 +66,10 @@ interface TerminalSimulatorProps {
     onComplete?: () => void;
     /** Optional custom commands to display */
     commands?: TerminalCommand[];
+    /** Current pipeline step from job status */
+    currentStep?: string;
+    /** Progress percentage (0-100) from job status */
+    progress?: number;
 }
 
 // ============================================================================
@@ -77,14 +81,28 @@ interface TerminalSimulatorProps {
 const CHARS_PER_SECOND = 30;
 const TYPING_INTERVAL_MS = 1000 / CHARS_PER_SECOND;
 
+// Pipeline step order for comparison
+const STEP_ORDER = ['ingest', 'analyze', 'recommend', 'generate'];
+
+/**
+ * Get the index of a step in the pipeline order.
+ */
+function getStepIndex(step: string): number {
+    return STEP_ORDER.indexOf(step);
+}
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
 export function TerminalSimulator({
     onComplete,
-    commands = COMMANDS
+    commands = COMMANDS,
+    currentStep,
+    progress,
 }: TerminalSimulatorProps) {
+    // Check if we're in real-time mode (showing actual job status)
+    const isRealTimeMode = currentStep !== undefined;
     // The lines that have been fully typed (or are outputs)
     const [completedLines, setCompletedLines] = useState<string[]>([]);
 
@@ -206,41 +224,97 @@ export function TerminalSimulator({
                     ref={terminalRef}
                     className="bg-[#0d1117] p-4 h-64 overflow-y-auto font-mono text-sm"
                 >
-                    {/* Completed lines */}
-                    {completedLines.map((line, index) => (
-                        <div
-                            key={index}
-                            className={`mb-1 ${line.startsWith('✓')
-                                ? 'text-[#8ccf7e]'
-                                : line.startsWith('$')
-                                    ? 'text-[#67b0e8]'
-                                    : 'text-[#8a9899]'
-                                }`}
-                        >
-                            {line}
+                    {/* Real-time mode: show actual job status */}
+                    {isRealTimeMode ? (
+                        <div className="space-y-3">
+                            <div className="text-[#67b0e8]">$ slmgen pipeline start</div>
+                            
+                            {/* Pipeline steps */}
+                            {['ingest', 'analyze', 'recommend', 'generate'].map((step) => {
+                                const isCompleted = getStepIndex(step) < getStepIndex(currentStep);
+                                const isCurrent = step === currentStep;
+                                
+                                return (
+                                    <div key={step} className="flex items-center gap-2">
+                                        <span className="w-4">
+                                            {isCompleted ? (
+                                                <span className="text-[#8ccf7e]">✓</span>
+                                            ) : isCurrent ? (
+                                                <span className="animate-pulse text-[#e5c76b]">●</span>
+                                            ) : (
+                                                <span className="text-[#3d444d]">○</span>
+                                            )}
+                                        </span>
+                                        <span className={`
+                                            ${isCompleted ? 'text-[#8ccf7e]' : ''}
+                                            ${isCurrent ? 'text-[#dadada]' : ''}
+                                            ${!isCompleted && !isCurrent ? 'text-[#3d444d]' : ''}
+                                        `}>
+                                            {step.charAt(0).toUpperCase() + step.slice(1)} dataset...
+                                        </span>
+                                        {isCurrent && progress !== undefined && (
+                                            <span className="text-[#8a9899] ml-2">
+                                                {progress}%
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            
+                            <div className="mt-4 pt-4 border-t border-[#2d3437]">
+                                <div className="text-[#8a9899] text-xs">
+                                    {progress !== undefined && (
+                                        <div className="mb-2">
+                                            Progress: <span className="text-[#8ccf7e]">{progress}%</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className="animate-pulse text-[#67b0e8]">▋</span>
+                                        <span>Processing {currentStep}...</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    ))}
+                    ) : (
+                        /* Simulated mode: typewriter effect */
+                        <>
+                            {/* Completed lines */}
+                            {completedLines.map((line, index) => (
+                                <div
+                                    key={index}
+                                    className={`mb-1 ${line.startsWith('✓')
+                                        ? 'text-[#8ccf7e]'
+                                        : line.startsWith('$')
+                                            ? 'text-[#67b0e8]'
+                                            : 'text-[#8a9899]'
+                                        }`}
+                                >
+                                    {line}
+                                </div>
+                            ))}
 
-                    {/* Currently typing line with cursor */}
-                    {currentLine && (
-                        <div className="text-[#67b0e8] flex">
-                            <span>{currentLine}</span>
-                            <span className="animate-pulse ml-0.5">▋</span>
-                        </div>
-                    )}
+                            {/* Currently typing line with cursor */}
+                            {currentLine && (
+                                <div className="text-[#67b0e8] flex">
+                                    <span>{currentLine}</span>
+                                    <span className="animate-pulse ml-0.5">▋</span>
+                                </div>
+                            )}
 
-                    {/* Waiting cursor when between commands */}
-                    {!currentLine && !isComplete && (
-                        <div className="text-[#67b0e8]">
-                            <span className="animate-pulse">▋</span>
-                        </div>
-                    )}
+                            {/* Waiting cursor when between commands */}
+                            {!currentLine && !isComplete && (
+                                <div className="text-[#67b0e8]">
+                                    <span className="animate-pulse">▋</span>
+                                </div>
+                            )}
 
-                    {/* Complete message */}
-                    {isComplete && (
-                        <div className="text-[#8ccf7e] mt-2">
-                            ✓ Notebook ready for download!
-                        </div>
+                            {/* Complete message */}
+                            {isComplete && (
+                                <div className="text-[#8ccf7e] mt-2">
+                                    ✓ Notebook ready for download!
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

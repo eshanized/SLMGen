@@ -105,24 +105,27 @@ const DEPLOYMENT_OPTIONS: (DeploymentOption & { Icon: React.ComponentType<{ clas
 
 interface TaskSelectorProps {
     onComplete: (task: TaskType, deployment: DeploymentTarget) => void;
+    disabled?: boolean;
 }
 
-export function TaskSelector({ onComplete }: TaskSelectorProps) {
+export function TaskSelector({ onComplete, disabled = false }: TaskSelectorProps) {
     const [step, setStep] = useState<'task' | 'deployment'>('task');
     const [selectedTask, setSelectedTask] = useState<TaskType | null>(null);
     const [selectedDeployment, setSelectedDeployment] = useState<DeploymentTarget | null>(null);
 
     // Handle task Selection
     const handleTaskSelect = (task: TaskType) => {
+        if (disabled) return;
         setSelectedTask(task);
-        // Auto-advance after short Delay
+        // Auto-advance after short delay
         setTimeout(() => setStep('deployment'), 200);
     };
 
     // Handle deployment Selection
     const handleDeploymentSelect = (deployment: DeploymentTarget) => {
+        if (disabled) return;
         setSelectedDeployment(deployment);
-        // Complete after short Delay
+        // Complete after short delay
         if (selectedTask) {
             setTimeout(() => onComplete(selectedTask, deployment), 200);
         }
@@ -144,9 +147,13 @@ export function TaskSelector({ onComplete }: TaskSelectorProps) {
     }) => (
         <button
             onClick={onClick}
+            disabled={disabled}
             className={`
                 p-6 rounded-xl border-2 text-left transition-all duration-200
-                hover:scale-[1.02] active:scale-[0.98]
+                ${disabled 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                }
                 ${isSelected
                     ? 'border-[#8ccf7e] bg-[#8ccf7e]/10 shadow-lg shadow-[#8ccf7e]/20'
                     : 'border-[#2d3437] bg-[#1e2528]/80 hover:border-[#8ccf7e]/50'

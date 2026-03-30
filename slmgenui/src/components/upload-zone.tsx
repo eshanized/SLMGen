@@ -29,11 +29,14 @@ import { uploadDataset, ApiError } from '@/lib/api';
 
 interface UploadZoneProps {
     /**
-     * Called when upload succeeds.
-     * Now includes filePreview - the first ~10KB of the file for the chat preview.
+     * Legacy sync upload handler (use onFileSelect for async flow).
      */
-    onUpload: (sessionId: string, stats: DatasetStats, filePreview: string) => void;
+    onUpload?: (sessionId: string, stats: DatasetStats, filePreview: string) => void;
     onError: (error: string) => void;
+    /** Async file selection handler - called with the File object */
+    onFileSelect?: (file: File) => Promise<void>;
+    /** Whether upload/processing is in progress */
+    isProcessing?: boolean;
 }
 
 // ============================================================================
@@ -76,11 +79,13 @@ function readFilePreview(file: File, maxBytes: number = 10000): Promise<string> 
 // COMPONENT
 // ============================================================================
 
-export function UploadZone({ onUpload, onError }: UploadZoneProps) {
+export function UploadZone({ onUpload, onError, onFileSelect, isProcessing = false }: UploadZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const isActive = isUploading || isProcessing;
 
     /**
      * Handle file selection - this is the main logic.
@@ -99,6 +104,26 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
         }
 
         setFileName(file.name);
+
+        // If onFileSelect is provided, use the async flow
+        if (onFileSelect) {
+            setIsUploading(true);
+            try {
+                await onFileSelect(file);
+            } catch (error) {
+                if (error instanceof ApiError) {
+                    onError(error.message);
+                } else {
+                    onError('Failed to upload file. Is the backend running?');
+                }
+                setFileName(null);
+            } finally {
+                setIsUploading(false);
+            }
+            return;
+        }
+
+        // Fallback to synchronous upload
         setIsUploading(true);
 
         try {
@@ -123,7 +148,7 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
         } finally {
             setIsUploading(false);
         }
-    }, [onUpload, onError]);
+    }, [onUpload, onError, onFileSelect]);
 
     // ========================================================================
     // DRAG AND DROP HANDLERS
@@ -188,7 +213,7 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
                     ? 'border-[#8ccf7e] bg-[#8ccf7e]/10 scale-[1.02]'
                     : 'border-[#2d3437] bg-[#1e2528]/50 hover:border-[#8ccf7e]/50 hover:bg-[#1e2528]/80'
                 }
-                ${isUploading ? 'pointer-events-none opacity-70' : ''}
+                ${isActive ? 'pointer-events-none opacity-70' : ''}
             `}
         >
             <input
@@ -200,11 +225,13 @@ export function UploadZone({ onUpload, onError }: UploadZoneProps) {
             />
 
             <div className="flex flex-col items-center gap-4 text-center">
-                {isUploading ? (
+                {isActive ? (
                     <>
-                        {/* Loading spinner - shows while uploading */}
+                        {/* Loading spinner - shows while uploading/processing */}
                         <div className="w-16 h-16 border-4 border-[#8ccf7e] border-t-transparent rounded-full animate-spin" />
-                        <p className="text-lg text-[#dadada]">Uploading {fileName}...</p>
+                        <p className="text-lg text-[#dadada]">
+                            {isProcessing ? `Processing ${fileName}...` : `Uploading ${fileName}...`}
+                        </p>
                     </>
                 ) : (
                     <>
