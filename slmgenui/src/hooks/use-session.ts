@@ -139,7 +139,7 @@ export function useSession() {
     // This is like an "auto-save" feature
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            // Don't persist internal cleanup functions
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { _pollCleanup, ...persistable } = state;
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
         }
@@ -147,12 +147,13 @@ export function useSession() {
 
     // Cleanup polling on unmount
     useEffect(() => {
+        const cleanup = state._pollCleanup;
         return () => {
-            if (state._pollCleanup) {
-                state._pollCleanup();
+            if (cleanup) {
+                cleanup();
             }
         };
-    }, []);
+    }, [state._pollCleanup]);
 
     // ========================================================================
     // SETTERS - These are the functions components call to update state
