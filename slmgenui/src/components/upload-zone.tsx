@@ -134,9 +134,11 @@ export function UploadZone({ onUpload, onError, onFileSelect, isProcessing = fal
             // Step 3: Upload to backend (this takes time)
             const response = await uploadDataset(file);
 
-            // Step 4: Pass everything to parent
+            // Step 4: Pass everything to parent (legacy sync mode)
             // The parent (Dashboard) will store this in session state
-            onUpload(response.session_id, response.stats, filePreview);
+            if (onUpload) {
+                onUpload(response.session_id, response.stats, filePreview);
+            }
 
         } catch (error) {
             if (error instanceof ApiError) {
