@@ -17,11 +17,21 @@ Contributor: Vedant Singh Rajput <teleported0722@gmail.com>
 # Copyright (c) 2026 Eshan Roy
 
 from pathlib import Path
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """App configuration loaded from Environment."""
+    
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+    
+    # App version
+    app_version: str = "2.0.0"
     
     # CORS settings - where the frontend Lives
     # Comma-separated list of allowed origins
@@ -35,12 +45,7 @@ class Settings(BaseSettings):
     github_token: str = ""
     
     # Session management
-    max_sessions: int = 25
-    session_ttl_minutes: int = 30
-    
-    # Redis-backed session store
-    redis_url: str = "redis://localhost:6379/0"
-    session_ttl_seconds: int = 1800  # 30 minutes (matches session_ttl_minutes)
+    session_ttl_seconds: int = 1800  # 30 minutes
     
     # Security settings
     max_upload_bytes: int = 100 * 1024 * 1024  # 100 MB
@@ -67,10 +72,6 @@ class Settings(BaseSettings):
     #   - Running demos without external dependencies
     # =========================================================================
     auth_disabled: bool = False
-    
-    class Config:
-        env_file = ".env"
-        extra = "ignore"  # ignore extra env Vars
 
 
 # Global settings Instance

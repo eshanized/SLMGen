@@ -1,46 +1,56 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Background Job System.
+Background Job System (Simplified).
 
-Provides async job processing using RQ (Redis Queue).
+For MVP, we run tasks synchronously instead of using background jobs.
+This module provides stubs for compatibility.
 
-Modules:
-    queue: Job queue configuration and management
-    tasks: Background job task functions
-    worker: RQ worker entry point
-
-Usage:
-    # Start worker
-    python -m app.jobs.worker
-    
-    # Or programmatically
-    from app.jobs.queue import job_queue
-    job_queue.enqueue("ingest_task", session_id="...")
+Author: Eshan Roy <eshanized@proton.me>
+License: MIT License
+Copyright (c) 2026 Eshan Roy
 """
 
-from app.jobs.queue import (
-    job_queue,
-    JobQueue,
-    QueueName,
-    get_job_queue,
-)
-from app.jobs.tasks import (
-    ingest_task,
-    analyze_task,
-    recommend_task,
-    generate_notebook_task,
-    get_task_function,
-)
+# Stub implementations - tasks run synchronously in the API routes
 
-__all__ = [
-    "job_queue",
-    "JobQueue",
-    "QueueName",
-    "get_job_queue",
-    "ingest_task",
-    "analyze_task",
-    "recommend_task",
-    "generate_notebook_task",
-    "get_task_function",
-]
+
+class StubJobQueue:
+    """Stub job queue that does nothing (sync execution)."""
+    
+    @property
+    def is_connected(self) -> bool:
+        return False
+    
+    def enqueue(self, task_name: str, **kwargs):
+        """Enqueue task (returns None for sync mode)."""
+        return None
+
+
+# Global stub instance
+job_queue = StubJobQueue()
+
+
+def get_job_queue() -> StubJobQueue:
+    """Get job queue instance."""
+    return job_queue
+
+
+# Task functions are imported from routers directly for sync execution
+def ingest_task(session_id: str):
+    """Stub for ingest task."""
+    pass
+
+
+def analyze_task(session_id: str):
+    """Stub for analyze task."""
+    pass
+
+
+def recommend_task(session_id: str):
+    """Stub for recommend task."""
+    pass
+
+
+def generate_notebook_task(session_id: str, model_id: str = None):
+    """Stub for generate task."""
+    pass

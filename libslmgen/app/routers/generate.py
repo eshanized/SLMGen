@@ -19,7 +19,7 @@ from fastapi.responses import Response
 
 from app.config import settings
 from app.session_store import session_store
-from app.storage import storage_service, BUCKET_NOTEBOOKS
+from app.storage import storage_service
 from app.models import GenerateRequest, NotebookResponse, TaskType
 from app.gist import create_gist
 from app.middleware.auth import get_optional_user, AuthenticatedUser, AnonymousUser

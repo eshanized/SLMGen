@@ -26,7 +26,7 @@ from app.session_store import session_store  # noqa: E402
 from app.storage import storage_service, serve_local_file  # noqa: E402
 from app.training_store import training_store  # noqa: E402
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
-from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training, pipeline, inference  # noqa: E402
+from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training  # noqa: E402
 
 # Setup Logging
 logging.basicConfig(
@@ -38,40 +38,27 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Handle startup and shutdown Events."""
+    """Handle startup and shutdown events."""
     # Startup
     logger.info("🚀 SLMGEN Backend starting up...")
     logger.info(f"📁 Upload directory: {settings.upload_dir}")
     logger.info(f"🌐 Allowed origins: {settings.allowed_origins}")
     logger.info(f"🔒 Rate limit: {settings.rate_limit_per_minute}/min, Upload: {settings.upload_rate_limit_per_minute}/min")
     
-    # Initialize Redis session store
-    try:
-        await session_store.connect()
-        logger.info(f"🗄️ Redis session store connected (TTL: {settings.session_ttl_seconds}s)")
-    except Exception as e:
-        logger.error(f"❌ Failed to connect to Redis for sessions: {e}")
-        logger.error("Session storage will be unavailable. Set REDIS_URL in your .env file.")
+    # Initialize in-memory session store
+    session_store.start()
+    logger.info(f"🗄️ In-memory session store started (TTL: {settings.session_ttl_seconds}s)")
     
-    # Initialize Redis training store
-    try:
-        await training_store.connect()
-        logger.info("📊 Redis training store connected")
-    except Exception as e:
-        logger.error(f"❌ Failed to connect to Redis for training: {e}")
-        logger.error("Training tracking will be unavailable.")
+    # Initialize training store
+    training_store.start()
+    logger.info("📊 Training store started")
     
     yield
     
     # Shutdown
     logger.info("👋 SLMGEN Backend shutting down...")
-    await session_store.close()
-    await training_store.close()
-    
-    # Shutdown inference engine
-    from app.inference import shutdown_inference_engine
-    await shutdown_inference_engine()
-    logger.info("🔌 Inference engine closed")
+    session_store.stop()
+    training_store.stop()
 
 
 # Create the App
@@ -108,16 +95,14 @@ app.include_router(analyze.router, tags=["Analysis"])
 app.include_router(recommend.router, tags=["Recommendation"])
 app.include_router(generate.router, tags=["Generation"])
 app.include_router(jobs.router)
-app.include_router(pipeline.router)
 app.include_router(preview.router)
 app.include_router(advanced.router, tags=["Advanced Features"])
 app.include_router(training.router)
-app.include_router(inference.router, tags=["Inference"])
 
 
 @app.get("/")
 async def root():
-    """Health check and info Endpoint."""
+    """Health check and info endpoint."""
     active_sessions = await session_store.get_active_count()
     return {
         "name": "SLMGEN API",
@@ -129,23 +114,17 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Simple health Check."""
-    redis_healthy = await session_store.health_check()
+    """Simple health check."""
     return {
-        "status": "healthy" if redis_healthy else "degraded",
-        "redis": "connected" if redis_healthy else "disconnected",
+        "status": "healthy",
+        "storage": "local",
     }
 
 
 @app.get("/storage/local/{path:path}")
 async def get_local_file(path: str):
-    """
-    Serve files from local storage (development only).
-    
-    This endpoint is only available when using local filesystem fallback.
-    In production, files are served via Supabase Storage signed URLs.
-    """
-    if storage_service.is_local_fallback:
+    """Serve files from local storage."""
+    if storage_service.is_local:
         try:
             content, content_type = await serve_local_file(path)
             return Response(content=content, media_type=content_type)
@@ -157,5 +136,5 @@ async def get_local_file(path: str):
     else:
         return JSONResponse(
             status_code=404,
-            content={"detail": "Local file serving not available in production."},
+            content={"detail": "Local file serving not available."},
         )

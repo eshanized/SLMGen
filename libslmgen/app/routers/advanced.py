@@ -24,8 +24,6 @@ from core import (
     BehaviorConfig,
     lint_prompt,
     generate_failure_previews,
-    generate_model_card,
-    compare_prompts,
     validate_hf_model,
     SUPPORTED_ARCHITECTURES,
 )
