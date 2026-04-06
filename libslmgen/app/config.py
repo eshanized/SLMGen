@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     )
     
     # App version
-    app_version: str = "2.0.0"
+    app_version: str = "3.0.0"
     
     # CORS settings - where the frontend Lives
     # Comma-separated list of allowed origins

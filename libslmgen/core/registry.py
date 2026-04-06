@@ -20,23 +20,27 @@ from huggingface_hub.utils import RepositoryNotFoundError, GatedRepoError
 
 logger = logging.getLogger(__name__)
 
-# Unsloth-compatible architectures
+# Unsloth-compatible architectures (V2.0.0)
 # These are the model architectures that Unsloth can optimize
 SUPPORTED_ARCHITECTURES = frozenset([
     "LlamaForCausalLM",
     "MistralForCausalLM", 
+    "MistralSmallForCausalLM",  # Mistral Small 3
     "Phi3ForCausalLM",
     "PhiForCausalLM",
     "Qwen2ForCausalLM",
+    "Qwen3ForCausalLM",  # Qwen 3
     "GemmaForCausalLM",
     "Gemma2ForCausalLM",
-    "GPTNeoXForCausalLM",  # TinyLlama uses this
+    "Gemma3ForCausalLM",  # Gemma 3
+    "GPTNeoXForCausalLM",  # TinyLlama, SmolLM
+    "SmolLMForCausalLM",
     "StableLmForCausalLM",
     "DeepseekForCausalLM",
     "InternLM2ForCausalLM",
 ])
 
-# LoRA target modules for different model architectures
+# LoRA target modules for different model architectures (V2.0.0)
 LORA_TARGETS = {
     # Phi models use fc1/fc2
     "Phi3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
@@ -45,12 +49,16 @@ LORA_TARGETS = {
     # Gemma models have simple attention
     "GemmaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
     "Gemma2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "Gemma3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
     
     # Llama-like (most models)
     "LlamaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "MistralForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "MistralSmallForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "Qwen2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "Qwen3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "GPTNeoXForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "SmolLMForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "StableLmForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "DeepseekForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "InternLM2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],

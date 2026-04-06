@@ -40,8 +40,69 @@ class ModelSpec:
     min_examples: int  # recommended minimum
 
 
-# Supported Models for fine-tuning
+# Supported Models for fine-tuning (V2.0.0)
 MODELS: dict[str, ModelSpec] = {
+    # === NEW 2025/2026 Models ===
+    "smollm3": ModelSpec(
+        key="smollm3",
+        model_id="HuggingFaceTB/SmolLM3-3B-Instruct",
+        name="SmolLM3 3B",
+        size="3B",
+        context_window=128000,
+        is_gated=False,
+        strengths=["128K context", "Multilingual (6 languages)", "Advanced reasoning"],
+        good_for_tasks=[TaskType.QA, TaskType.EXTRACTION, TaskType.GENERATION, TaskType.CONVERSATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER, DeploymentTarget.DESKTOP, DeploymentTarget.EDGE],
+        min_examples=100,
+    ),
+    "mistral_small": ModelSpec(
+        key="mistral_small",
+        model_id="mistralai/Mistral-Small-24B-Instruct-2501",
+        name="Mistral Small 3",
+        size="24B",
+        context_window=131072,
+        is_gated=False,
+        strengths=["SOTA small model", "Code & reasoning", "128K context"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION, TaskType.EXTRACTION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER],
+        min_examples=200,
+    ),
+    "qwen3": ModelSpec(
+        key="qwen3",
+        model_id="Qwen/Qwen3-4B-Instruct",
+        name="Qwen 3 4B",
+        size="4B",
+        context_window=32768,
+        is_gated=False,
+        strengths=["Thinking mode", "Code generation", "Math reasoning"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION, TaskType.EXTRACTION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER, DeploymentTarget.DESKTOP],
+        min_examples=100,
+    ),
+    "qwen25_14b": ModelSpec(
+        key="qwen25_14b",
+        model_id="Qwen/Qwen2.5-14B-Instruct",
+        name="Qwen 2.5 14B",
+        size="14B",
+        context_window=32768,
+        is_gated=False,
+        strengths=["High quality", "Complex reasoning", "Code generation"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER],
+        min_examples=200,
+    ),
+    "gemma4": ModelSpec(
+        key="gemma4",
+        model_id="google/gemma-3-4b-it",
+        name="Gemma 3 4B",
+        size="4B",
+        context_window=131072,
+        is_gated=True,
+        strengths=["Gemma 3", "Vision support", "128K context"],
+        good_for_tasks=[TaskType.QA, TaskType.CONVERSATION, TaskType.GENERATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER, DeploymentTarget.DESKTOP],
+        min_examples=100,
+    ),
     "phi4": ModelSpec(
         key="phi4",
         model_id="microsoft/Phi-4-mini-instruct",
@@ -126,30 +187,6 @@ MODELS: dict[str, ModelSpec] = {
         good_for_deploy=[DeploymentTarget.MOBILE, DeploymentTarget.EDGE, DeploymentTarget.BROWSER],
         min_examples=50,
     ),
-    "tinyllama": ModelSpec(
-        key="tinyllama",
-        model_id="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        name="TinyLlama 1.1B",
-        size="1.1B",
-        context_window=2048,
-        is_gated=False,
-        strengths=["Tiny footprint", "Embedded systems", "Real-time"],
-        good_for_tasks=[TaskType.CLASSIFY, TaskType.QA],
-        good_for_deploy=[DeploymentTarget.EDGE, DeploymentTarget.MOBILE, DeploymentTarget.BROWSER],
-        min_examples=50,
-    ),
-    "stablelm": ModelSpec(
-        key="stablelm",
-        model_id="stabilityai/stablelm-zephyr-3b",
-        name="StableLM Zephyr 3B",
-        size="3B",
-        context_window=4096,
-        is_gated=False,
-        strengths=["Balanced size", "General purpose", "Fast training"],
-        good_for_tasks=[TaskType.CONVERSATION, TaskType.GENERATION, TaskType.QA],
-        good_for_deploy=[DeploymentTarget.DESKTOP, DeploymentTarget.SERVER, DeploymentTarget.CLOUD],
-        min_examples=100,
-    ),
     "deepseek_coder": ModelSpec(
         key="deepseek_coder",
         model_id="deepseek-ai/deepseek-coder-1.3b-instruct",
@@ -204,12 +241,12 @@ def _score_data_fit(model: ModelSpec, stats: DatasetStats, chars: DatasetCharact
     """Score based on dataset characteristics (0-20 points)."""
     score = 10  # baseline
     
-    # Multilingual data → Qwen preferred
-    if chars.is_multilingual and model.key == "qwen25":
+    # Multilingual data → Qwen preferred (including Qwen 3)
+    if chars.is_multilingual and model.key in ["qwen25", "qwen3"]:
         score += 10
     
     # JSON output → Qwen or Phi
-    if chars.looks_like_json and model.key in ["qwen25", "phi4"]:
+    if chars.looks_like_json and model.key in ["qwen25", "qwen3", "phi4"]:
         score += 5
     
     # Multi-turn → Llama or conversation-focused
@@ -257,11 +294,11 @@ def _get_reasons(
     if deploy in model.good_for_deploy:
         reasons.append(f"✅ Great for {deploy.value} deployment")
     
-    # Special Strengths
-    if chars.is_multilingual and model.key == "qwen25":
+    # Special Strengths (V2.0.0)
+    if chars.is_multilingual and model.key in ["qwen25", "qwen3"]:
         reasons.append("✅ Best choice for multilingual data")
     
-    if chars.looks_like_json and model.key in ["qwen25", "phi4"]:
+    if chars.looks_like_json and model.key in ["qwen25", "qwen3", "phi4"]:
         reasons.append("✅ Excels at structured JSON output")
     
     if deploy in [DeploymentTarget.EDGE, DeploymentTarget.MOBILE]:
