@@ -30,13 +30,17 @@ import {
   CircleDot,
 } from '@/components/icons';
 
-// Supported models to Showcase (V2.0.0 - 14 models)
+// Supported models to Showcase (V3.0.0 - 18 models)
 const MODELS = [
-  { name: 'SmolLM3', size: '3B', Icon: Sparkles, color: 'text-[#e69875]' },
+  { name: 'Qwen 3.5', size: '32B', Icon: Star, color: 'text-[#8ccf7e]' },
+  { name: 'Llama 3.3', size: '8B', Icon: CircleDot, color: 'text-[#e5c76b]' },
+  { name: 'Llama 3.3 70B', size: '70B', Icon: CircleDot, color: 'text-[#e5c76b]' },
+  { name: 'DeepSeek V3', size: '84B', Icon: Diamond, color: 'text-[#c47fd5]' },
   { name: 'Mistral Small 3', size: '24B', Icon: Hexagon, color: 'text-[#6cbfbf]' },
   { name: 'Qwen 3', size: '4B', Icon: Star, color: 'text-[#8ccf7e]' },
   { name: 'Qwen 2.5 14B', size: '14B', Icon: Star, color: 'text-[#8ccf7e]' },
   { name: 'Gemma 3', size: '4B', Icon: Sparkles, color: 'text-[#c47fd5]' },
+  { name: 'SmolLM3', size: '3B', Icon: Sparkles, color: 'text-[#e69875]' },
   { name: 'Phi-4 Mini', size: '3.8B', Icon: Diamond, color: 'text-[#67b0e8]' },
   { name: 'Llama 3.2 3B', size: '3B', Icon: CircleDot, color: 'text-[#e5c76b]' },
   { name: 'Gemma 2', size: '2B', Icon: Sparkles, color: 'text-[#c47fd5]' },
@@ -48,9 +52,9 @@ const MODELS = [
   { name: 'Phi-3.5 Mini', size: '3.8B', Icon: Diamond, color: 'text-[#67b0e8]' },
 ];
 
-// Key Stats (V2.0.0)
+// Key Stats (V3.0.0)
 const STATS = [
-  { value: '14', label: 'SLM Models', sublabel: 'up to 24B params' },
+  { value: '18', label: 'SLM Models', sublabel: 'up to 84B params' },
   { value: '6', label: 'Task Types', sublabel: 'classify to generation' },
   { value: '100%', label: 'Free', sublabel: 'runs on Colab T4' },
   { value: '128K', label: 'Max Context', sublabel: 'token context window' },
@@ -127,7 +131,7 @@ export default function HomePage() {
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-xl text-[#8a9899] max-w-2xl mx-auto mb-10 leading-relaxed">
-            SLMGEN analyzes your dataset and scores 14 small language models
+            SLMGEN analyzes your dataset and scores 18 small language models
             to find the perfect fit for your task and deployment target.<br />
             <strong className="text-[#dadada]">One notebook. Zero setup. Ready to train.</strong>
           </motion.p>

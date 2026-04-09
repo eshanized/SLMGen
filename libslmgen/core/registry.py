@@ -20,7 +20,7 @@ from huggingface_hub.utils import RepositoryNotFoundError, GatedRepoError
 
 logger = logging.getLogger(__name__)
 
-# Unsloth-compatible architectures (V2.0.0)
+# Unsloth-compatible architectures (V3.0.0)
 # These are the model architectures that Unsloth can optimize
 SUPPORTED_ARCHITECTURES = frozenset([
     "LlamaForCausalLM",
@@ -29,14 +29,17 @@ SUPPORTED_ARCHITECTURES = frozenset([
     "Phi3ForCausalLM",
     "PhiForCausalLM",
     "Qwen2ForCausalLM",
-    "Qwen3ForCausalLM",  # Qwen 3
+    "Qwen2VLForCausalLM",  # Qwen with vision
+    "Qwen3ForCausalLM",  # Qwen 3/3.5
     "GemmaForCausalLM",
     "Gemma2ForCausalLM",
     "Gemma3ForCausalLM",  # Gemma 3
+    "Gemma3ForConditionalGeneration",  # Gemma 3 vision
     "GPTNeoXForCausalLM",  # TinyLlama, SmolLM
     "SmolLMForCausalLM",
     "StableLmForCausalLM",
     "DeepseekForCausalLM",
+    "DeepseekV3ForCausalLM",  # DeepSeek V3 MoE
     "InternLM2ForCausalLM",
 ])
 

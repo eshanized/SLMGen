@@ -1,91 +1,130 @@
-# SLMGEN V2.0.0 Roadmap
+# SLMGEN V3.0.0 Roadmap
 
-## What's New in V2.0.0
+## What's New in V3.0.0
 
-- ⚡ **Removed Redis dependency** - Simple in-memory storage
-- 🚀 **Removed Inference Playground** - Keeps project lean
-- 🔄 **Simplified architecture** - Easier to deploy
-- 📦 **Lighter dependencies** - Faster installs
-
----
-
-## 🚀 High-Impact Initiatives
-
-### 1. Universal Dataset Converter
-**Goal**: Remove friction by supporting any input format.
-- [ ] Auto-detect and ingest CSV, TSV, JSON, Parquet
-- [ ] Support popular formats: Alpaca, ShareGPT, OpenAI Fine-tuning
-- [ ] Export to multiple standard formats
-- [ ] Interactive column mapping UI
-
-### 2. Training Completion Notifications
-**Goal**: Keep users engaged during long training jobs.
-- [ ] Email notifications on completion
-- [ ] Push notifications
-- [ ] Webhook integration
-
-### 3. One-Click Deployment Pipelines
-**Goal**: Seamlessly move from training to production.
-- [ ] **Ollama**: Auto-generate `Modelfile` and GGUF quantization
-- [ ] **vLLM/TGI**: Docker compose templates for self-hosting
-- [ ] **HuggingFace**: Auto-push models with generated model cards
+- 🚀 **18 Models** - Including Qwen 3.5, Llama 3.3, DeepSeek V3
+- 📊 **128K Context** - Extended context windows  
+- ⚡ **Dataset Converter** - CSV, TSV, JSON, Alpaca, ShareGPT
+- 🎯 **Training Presets** - Quick Demo, Production, Edge
+- 📦 **Export Pipeline** - Ollama, GGUF, vLLM, HuggingFace
+- ⚙️ **Simplified** - No Redis, in-memory storage only
 
 ---
 
-## 💡 Core Enhancements (Medium Impact)
+## 🎯 Current Features (V3.0.0)
 
-### Model & Training
-- [ ] **Training Presets**: "Fast Demo" vs. "Production Quality" configurations
-- [ ] **Eval Benchmarks**: Auto-run MMLU/HellaSwag on fine-tuned models
+### Dataset Converter ✅
+- [x] CSV/TSV ingestion
+- [x] JSON (array format)
+- [x] Alpaca format
+- [x] ShareGPT format
+- [x] Auto-detection
+- [ ] Parquet support (V3.1)
 
-### Platform & UX
-- [ ] **Dataset Versioning**: Track changes, rollback, and diff versions
-- [ ] **Cost Estimator**: Calculator for Colab Pro/A100 compute costs
-- [ ] **Bulk Operations**: Upload multiple datasets for comparison jobs
-- [ ] **Job Templates**: Save reusable configurations
+### Training Presets ✅
+- [x] Quick Demo mode
+- [x] Production mode
+- [x] Edge Optimize mode
+- [x] Long Context mode
+- [x] Code Fine-tune mode
 
-### Developer Tools
-- [ ] **SLMGEN CLI**: `slmgen upload data.jsonl --task qa --deploy edge`
-- [ ] **Public API**: Programmatic access to analysis and recommendation engine
+### Export Pipeline ✅
+- [x] Colab notebook (existing)
+- [x] Ollama Modelfile
+- [x] GGUF instructions
+- [x] vLLM template
+- [ ] Direct GGUF conversion (V3.1)
+
+### Evaluation ✅
+- [ ] MMLU benchmark runner (V3.2)
+- [ ] HellaSwag benchmark (V3.2)
+- [ ] Humaneval benchmark (V3.2)
 
 ---
 
-## 📅 Phasing Priority Suggestion
+## 📅 Phasing V3
 
-### Phase 1: Friction Reduction (V2.1)
-Focus on widening the funnel.
-1. Universal Dataset Converter (CSV, TSV, JSON, Parquet)
-2. Bulk Operations
-3. CLI Tool
+### Phase 1: Converter + Export (V3.1)
+1. Parquet support
+2. Direct GGUF conversion
+3. Batch conversion
 
-### Phase 2: Ecosystem Loop (V2.2)
-Focus on keeping the user engaged.
-1. Training Completion Notifications
-2. Dataset Versioning
-3. Job Templates
+### Phase 2: Evaluation (V3.2)
+1. Benchmark runners
+2. Training analytics
+3. Model comparison
 
-### Phase 3: Value Expansion (V2.3+)
-Focus on advanced capabilities.
-1. One-Click Deployment Pipelines (Ollama, vLLM, HF)
-2. Eval Benchmarks
-3. Custom Training Presets
+### Phase 3: Scale (V3.3)
+1. Multi-dataset processing
+2. CLI tool
+3. Python SDK
+
+---
+
+## 📦 Supported Models V3.0.0
+
+| Model | Size | Context | Architecture |
+|------|------|---------|--------------|
+| DeepSeek V3 | 84B | 64K | MoE |
+| Llama 3.3 70B | 70B | 128K | Dense |
+| Qwen 3.5 32B | 32B | 64K | Dense |
+| Mistral Small 3 | 24B | 131K | MoE |
+| Llama 3.3 8B | 8B | 128K | Dense |
+| Qwen 2.5 14B | 14B | 32K | Dense |
+| Qwen 3 | 4B | 32K | Dense |
+| Gemma 3 | 4B | 128K | Dense |
+| SmolLM3 | 3B | 128K | Dense |
+| Phi-4 Mini | 3.8B | 16K | Dense |
+| Llama 3.2 3B | 3B | 8K | Dense |
+| Gemma 2 | 2B | 8K | Dense |
+| Qwen 2.5 | 3B | 32K | Dense |
+| Mistral | 7B | 32K | Dense |
+| SmolLM2 | 1.7B | 8K | Dense |
+| Llama 3.2 1B | 1B | 8K | Dense |
+| DeepSeek Coder | 1.3B | 16K | Dense |
+| Phi-3.5 Mini | 3.8B | 128K | Dense |
+
+**Total: 18 models** (up from 11 in V1.x)
 
 ---
 
 ## ❌ Not Planned
 
-The following were **removed in V2.0.0** and are not planned for return:
-
-- **Inference Playground** - Requires paid API,成本的 center
-- **Redis Session Storage** - Unnecessary for MVP
-- **Background Job Queue** - Sync execution simpler
-- **Theme Toggle** - Marked as low priority
+- Inference Playground (paid API cost)
+- Redis dependencies
+- Background job queue
+- Complex theme system
 
 ---
 
 ## Version History
 
 | Version | Date | Changes |
-|---------|------|--------|
-| 1.0.0 | 2025 | Initial release |
-| 2.0.0 | 2026 | Simplified architecture, removed Redis |
+|---------|------|---------|
+| 1.0.0 | 2026-01 | Initial release |
+| 2.0.0 | 2026-04 | Simplified, removed Redis |
+| 3.0.0 | 2026-04 | 18 models, converter, presets |
+
+---
+
+## Quick Start
+
+```bash
+# Backend
+cd libslmgen
+AUTH_DISABLED=true uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd slmgenui
+npm run dev
+```
+
+### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/convert` | POST | Convert dataset format |
+| `/detect-format` | POST | Auto-detect format |
+| `/export/generate` | POST | Generate export |
+| `/presets/` | GET | List presets |
+| `/presets/recommend` | POST | Recommend preset |

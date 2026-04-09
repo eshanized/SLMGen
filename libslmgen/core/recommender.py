@@ -40,9 +40,57 @@ class ModelSpec:
     min_examples: int  # recommended minimum
 
 
-# Supported Models for fine-tuning (V2.0.0)
+# Supported Models for fine-tuning (V3.0.0)
 MODELS: dict[str, ModelSpec] = {
-    # === NEW 2025/2026 Models ===
+    # === NEW 2026 Models ===
+    "qwen35": ModelSpec(
+        key="qwen35",
+        model_id="Qwen/Qwen3.5-32B-Instruct",
+        name="Qwen 3.5 32B",
+        size="32B",
+        context_window=64000,
+        is_gated=False,
+        strengths=["Hybrid thinking", "Code generation", "Math reasoning", "64K context"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION, TaskType.EXTRACTION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER],
+        min_examples=300,
+    ),
+    "llama33": ModelSpec(
+        key="llama33",
+        model_id="meta-llama/Llama-3.3-8B-Instruct",
+        name="Llama 3.3 8B",
+        size="8B",
+        context_window=128000,
+        is_gated=True,
+        strengths=["128K context", "General purpose", "Top-tier quality"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER, DeploymentTarget.DESKTOP],
+        min_examples=200,
+    ),
+    "llama33_70b": ModelSpec(
+        key="llama33_70b",
+        model_id="meta-llama/Llama-3.3-70B-Instruct",
+        name="Llama 3.3 70B",
+        size="70B",
+        context_window=128000,
+        is_gated=True,
+        strengths=["SOTA quality", "128K context", "Complex reasoning"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER],
+        min_examples=500,
+    ),
+    "deepseek_v3": ModelSpec(
+        key="deepseek_v3",
+        model_id="deepseek-ai/DeepSeek-V3",
+        name="DeepSeek V3",
+        size="84B",
+        context_window=64000,
+        is_gated=False,
+        strengths=["MoE architecture", "Open weights", "64K context"],
+        good_for_tasks=[TaskType.QA, TaskType.GENERATION, TaskType.CONVERSATION],
+        good_for_deploy=[DeploymentTarget.CLOUD, DeploymentTarget.SERVER],
+        min_examples=500,
+    ),
     "smollm3": ModelSpec(
         key="smollm3",
         model_id="HuggingFaceTB/SmolLM3-3B-Instruct",

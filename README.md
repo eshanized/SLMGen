@@ -23,17 +23,19 @@ SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL da
 
 ---
 
-## 🎯 Core Features
+## 🎯 Core Features (V3.0.0)
 
 | Feature | Description |
 |---------|-------------|
 | 📤 **Smart Upload** | Drag-and-drop JSONL with **Live Chat Preview** (min 50 examples) |
 | 📊 **Quality Scoring** | Duplicate detection, consistency checks, 0-100% quality score |
-| 🧠 **11 Model Support** | Phi-4, Llama 3.2, Gemma 2, Qwen 2.5, Mistral 7B + more |
+| 🧠 **18 Model Support** | Qwen 3.5, Llama 3.3, DeepSeek V3, Phi-4, Gemma 3, SmolLM3 + more |
 | 🎯 **100-Point Matching** | Task fit (50pts) + Deploy target (30pts) + Data traits (20pts) |
 | 💻 **Training Simulator** | Real-time terminal simulation during generation phase |
 | 📓 **Self-Contained Notebooks** | Dataset embedded as base64 - no file uploads needed |
-| ☁️ **6 Deploy Targets** | Cloud, Server, Desktop, Edge, Mobile, Browser |
+| 🔄 **Dataset Converter** | CSV, TSV, JSON, Alpaca, ShareGPT → ChatML |
+| ⚡ **Training Presets** | Quick Demo, Production, Edge, Code, Long Context |
+| 📦 **Export Options** | Ollama, GGUF, vLLM, HuggingFace |
 
 ---
 
