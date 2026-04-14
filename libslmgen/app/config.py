@@ -54,24 +54,26 @@ class Settings(BaseSettings):
     download_token_ttl_minutes: int = 60  # Download token validity
     
     # =========================================================================
-    # Local Development Mode
+    # Optional Authentication Mode
     # =========================================================================
-    # Hey there, local developer! 👋
+    # By default, authentication is optional - anyone can generate notebooks!
     # 
-    # If you just want to run SLMGEN locally without setting up Supabase,
-    # set AUTH_DISABLED=true in your .env file (or as an environment variable).
+    # Set AUTH_DISABLED=false if you want to require login for all features.
+    # When auth is enabled:
+    #   - Job history endpoints require authentication
+    #   - User profile features work
     # 
-    # What happens when auth is disabled:
-    #   - No JWT verification needed - you'll be logged in as "local-dev-user"
-    #   - The core workflow (upload → analyze → recommend → generate) works fine!
-    #   - Job history endpoints will return a helpful 503 error since they need a database
+    # When auth is disabled (default):
+    #   - No JWT verification needed - anonymous users can use all features
+    #   - The core workflow (upload → analyze → recommend → generate) works!
+    #   - Job history returns 503 (requires database)
     # 
     # This is great for:
-    #   - Quick local testing
-    #   - Contributing to the codebase without cloud setup
-    #   - Running demos without external dependencies
+    #   - Demos and quick testing
+    #   - Public usage without account creation
+    #   - Maximum accessibility
     # =========================================================================
-    auth_disabled: bool = False
+    auth_disabled: bool = True
 
 
 # Global settings Instance
