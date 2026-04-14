@@ -29,22 +29,22 @@ export default function SettingsLayout({
     const { profile } = useAuth()
 
     return (
-        <div className="min-h-screen bg-[#141b1e]">
+        <div className="min-h-screen bg-zinc-950">
             {/* Header */}
-            <header className="border-b border-[#2d3437] bg-[#1e2528]/80 backdrop-blur-sm sticky top-0 z-50">
+            <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link
                             href="/dashboard"
-                            className="flex items-center gap-2 text-[#8a9899] hover:text-[#dadada] transition-colors"
+                            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
                             <span>Back to Dashboard</span>
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-[#8ccf7e]" />
-                        <span className="text-[#dadada] font-medium">Settings</span>
+                        <Settings className="w-5 h-5 text-violet-400" />
+                        <span className="text-white font-medium">Settings</span>
                     </div>
                 </div>
             </header>
@@ -54,16 +54,16 @@ export default function SettingsLayout({
                     {/* Sidebar */}
                     <aside className="w-64 flex-shrink-0">
                         {/* User info */}
-                        <div className="p-4 bg-[#1e2528] border border-[#2d3437] rounded-xl mb-6">
+                        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center text-[#141b1e] font-bold text-lg">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-white font-bold text-lg">
                                     {profile?.full_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || '?'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[#dadada] font-medium truncate">
+                                    <p className="text-white font-medium truncate">
                                         {profile?.full_name || 'User'}
                                     </p>
-                                    <p className="text-sm text-[#8a9899] truncate">
+                                    <p className="text-sm text-zinc-500 truncate">
                                         {profile?.email}
                                     </p>
                                 </div>
@@ -80,8 +80,8 @@ export default function SettingsLayout({
                                         key={item.href}
                                         href={item.href}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
-                                                ? 'bg-[#8ccf7e]/10 text-[#8ccf7e] border border-[#8ccf7e]/30'
-                                                : 'text-[#8a9899] hover:text-[#dadada] hover:bg-[#1e2528]'
+                                                ? 'bg-violet-600/10 text-violet-400 border border-violet-500/30'
+                                                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                                             }`}
                                     >
                                         <Icon className="w-5 h-5" />

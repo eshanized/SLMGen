@@ -1,8 +1,7 @@
 /**
- * Main Navigation Bar Component.
+ * Main Navigation Bar Component - V3.0.0.
  * 
- * Desktop and mobile responsive navigation with icons.
- * Everblush themed.
+ * Updated with fresh dark theme and V3.0.0 branding.
  * 
  * @author Eshan Roy <eshanized@proton.me>
  * @license MIT
@@ -32,7 +31,6 @@ interface NavItem {
     label: string;
     href: string;
     icon: React.ComponentType<{ className?: string }>;
-    isExternal?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -54,7 +52,6 @@ export function Navbar() {
         return pathname.startsWith(href);
     };
 
-    // Handle scroll effect
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 20);
@@ -65,8 +62,7 @@ export function Navbar() {
 
     return (
         <motion.header
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'pt-4 pb-2' : 'py-0'
-                }`}
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}
         >
             <div className="container mx-auto px-4">
                 <motion.nav
@@ -74,47 +70,52 @@ export function Navbar() {
                     className={`
                         flex items-center justify-between transition-all duration-300
                         ${isScrolled
-                            ? 'h-16 bg-[#141b1e]/70 backdrop-blur-xl border border-[#2d3437]/50 rounded-2xl shadow-xl shadow-black/20 px-6 max-w-5xl mx-auto'
-                            : 'h-20 bg-transparent border-b border-[#2d3437] px-0 max-w-none'
+                            ? 'h-14 bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl shadow-black/30 px-5 max-w-5xl mx-auto'
+                            : 'h-18 bg-transparent border-b border-zinc-800/50 px-0 max-w-none'
                         }
                     `}
                 >
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group mr-8">
+                    <Link href="/" className="flex items-center gap-2.5 group mr-8">
                         <motion.div
-                            className="relative w-9 h-9"
+                            className="relative w-8 h-8"
                             whileHover={{ rotate: 180 }}
-                            transition={{ duration: 0.5, ease: "circOut" }}
+                            transition={{ duration: 0.5 }}
                         >
                             <Image
                                 src="/logo.svg"
-                                alt="SLMGEN Logo"
+                                alt="SLMGEN"
                                 fill
                                 className="object-contain"
                             />
                         </motion.div>
-                        <span className="text-xl font-bold text-[#dadada] tracking-wide group-hover:text-white transition-colors">SLMGEN</span>
+                        <span className="text-lg font-bold tracking-wide group-hover:text-white transition-colors">
+                            SLMGEN
+                        </span>
+                        <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-md text-white">
+                            v3
+                        </span>
                     </Link>
 
-                    {/* Desktop Navigation - Centered Pill Design */}
-                    <div className="hidden md:flex items-center gap-1.5">
+                    {/* Desktop Navigation */}
+                    <div className="hidden md:flex items-center gap-1">
                         {NAV_ITEMS.map((item) => {
                             const active = isActive(item.href);
                             return (
                                 <Link
                                     key={item.label}
                                     href={item.href}
-                                    className="relative px-4 py-2 text-sm font-medium transition-colors"
+                                    className="relative px-3.5 py-2 text-sm font-medium transition-colors"
                                 >
                                     {active && (
                                         <motion.div
                                             layoutId="nav-pill"
-                                            className="absolute inset-0 bg-[#1e2528] rounded-xl border border-[#2d3437]"
+                                            className="absolute inset-0 bg-zinc-800/60 rounded-lg border border-zinc-700"
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}
-                                    <span className={`relative z-10 flex items-center gap-2 ${active ? 'text-[#8ccf7e]' : 'text-[#8a9899] hover:text-[#dadada]'}`}>
-                                        <item.icon className={`w-4 h-4 ${active ? 'text-[#8ccf7e]' : 'text-[#8a9899]'}`} />
+                                    <span className={`relative z-10 flex items-center gap-2 ${active ? 'text-violet-400' : 'text-zinc-400 hover:text-white'}`}>
+                                        <item.icon className={`w-4 h-4 ${active ? 'text-violet-400' : 'text-zinc-400'}`} />
                                         {item.label}
                                     </span>
                                 </Link>
@@ -122,31 +123,30 @@ export function Navbar() {
                         })}
                     </div>
 
-                    {/* Right Side Actions */}
+                    {/* Right Actions */}
                     <div className="flex items-center gap-3 md:ml-auto">
                         <a
                             href="https://github.com/eshanized/slmgen"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hidden md:flex items-center gap-2 px-4 py-2 text-[#8a9899] hover:text-[#dadada] hover:bg-[#1e2528]/50 border border-transparent hover:border-[#2d3437] rounded-xl transition-all text-sm font-medium"
+                            className="hidden md:flex items-center gap-2 px-3.5 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 border border-transparent hover:border-zinc-700 rounded-lg transition-all text-sm font-medium"
                         >
                             <Github className="w-4 h-4" />
                             <span>GitHub</span>
                         </a>
 
-                        <div className={`w-px h-8 bg-[#2d3437] hidden md:block mx-1 ${isScrolled ? 'h-6' : 'h-8'}`} />
+                        <div className="w-px h-6 bg-zinc-800 hidden md:block mx-1" />
 
                         <Link
                             href="/dashboard"
-                            className="px-5 py-2.5 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] rounded-xl font-bold hover:shadow-lg hover:shadow-[#8ccf7e]/20 transition-all hover:-translate-y-0.5 text-sm active:scale-95"
+                            className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-violet-600/20 transition-all hover:-translate-y-0.5 text-sm"
                         >
-                            Get Started
+                            Start Fine-Tuning
                         </Link>
 
-                        {/* Mobile Menu Button */}
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="md:hidden p-2 text-[#8a9899] hover:text-[#dadada] hover:bg-[#1e2528] rounded-xl transition-colors"
+                            className="md:hidden p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
                             aria-label={isOpen ? 'Close menu' : 'Open menu'}
                         >
                             {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -163,7 +163,7 @@ export function Navbar() {
                             exit={{ opacity: 0, y: -20, height: 0 }}
                             className="md:hidden overflow-hidden"
                         >
-                            <div className="mt-2 bg-[#1e2528]/95 backdrop-blur-xl rounded-2xl p-2 border border-[#2d3437] shadow-xl">
+                            <div className="mt-2 bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-2 border border-zinc-800 shadow-2xl">
                                 <div className="flex flex-col gap-1">
                                     {NAV_ITEMS.map((item) => (
                                         <Link
@@ -173,8 +173,8 @@ export function Navbar() {
                                             className={`
                                                 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
                                                 ${isActive(item.href)
-                                                    ? 'bg-[#2d3437] text-[#8ccf7e]'
-                                                    : 'text-[#8a9899] hover:text-[#dadada] hover:bg-[#232a2d]'
+                                                    ? 'bg-zinc-800 text-violet-400'
+                                                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                                                 }
                                             `}
                                         >
@@ -182,12 +182,12 @@ export function Navbar() {
                                             {item.label}
                                         </Link>
                                     ))}
-                                    <hr className="border-[#2d3437] my-2" />
+                                    <hr className="border-zinc-800 my-2" />
                                     <a
                                         href="https://github.com/eshanized/slmgen"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#8a9899] hover:text-[#dadada] hover:bg-[#232a2d] transition-all"
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all"
                                     >
                                         <Github className="w-5 h-5" />
                                         GitHub

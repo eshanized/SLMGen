@@ -68,21 +68,21 @@ export default function SignupPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-[#141b1e] flex items-center justify-center px-4">
+            <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
                 <div className="max-w-md w-full text-center">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-[#8ccf7e]/20 flex items-center justify-center mb-6">
-                        <Check className="w-8 h-8 text-[#8ccf7e]" />
+                    <div className="w-16 h-16 mx-auto rounded-full bg-violet-600/20 flex items-center justify-center mb-6">
+                        <Check className="w-8 h-8 text-violet-400" />
                     </div>
-                    <h1 className="text-2xl font-bold text-[#dadada] mb-2">Check your email</h1>
-                    <p className="text-[#8a9899] mb-6">
-                        We sent a confirmation link to <strong className="text-[#dadada]">{email}</strong>
+                    <h1 className="text-2xl font-bold text-white mb-2">Check your email</h1>
+                    <p className="text-zinc-400 mb-6">
+                        We sent a confirmation link to <strong className="text-white">{email}</strong>
                     </p>
-                    <p className="text-sm text-[#8a9899]">
+                    <p className="text-sm text-zinc-500">
                         Click the link in the email to activate your account.
                     </p>
                     <Link
                         href="/login"
-                        className="inline-block mt-6 text-[#8ccf7e] hover:underline"
+                        className="inline-block mt-6 text-violet-400 hover:text-violet-300 hover:underline"
                     >
                         Back to login
                     </Link>
@@ -92,28 +92,28 @@ export default function SignupPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#141b1e] flex items-center justify-center px-4">
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
             <div className="max-w-md w-full">
                 {/* Logo */}
                 <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center">
-                        <Rocket className="w-5 h-5 text-[#141b1e]" />
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                        <Rocket className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-[#dadada] tracking-wide">SLMGEN</span>
+                    <span className="text-2xl font-bold text-white tracking-wide">SLMGEN</span>
                 </Link>
 
                 {/* Card */}
-                <div className="bg-[#1e2528] border border-[#2d3437] rounded-2xl p-8">
-                    <h1 className="text-2xl font-bold text-[#dadada] text-center mb-2">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+                    <h1 className="text-2xl font-bold text-white text-center mb-2">
                         Create your account
                     </h1>
-                    <p className="text-[#8a9899] text-center mb-6">
+                    <p className="text-zinc-400 text-center mb-6">
                         Start fine-tuning models in minutes
                     </p>
 
                     {/* Error */}
                     {error && (
-                        <div className="mb-6 p-3 bg-[#e57474]/10 border border-[#e57474]/50 rounded-lg text-[#e57474] text-sm">
+                        <div className="mb-6 p-3 bg-red-900/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
                             {error}
                         </div>
                     )}
@@ -122,7 +122,7 @@ export default function SignupPage() {
                     <div className="space-y-3 mb-6">
                         <button
                             onClick={() => handleOAuth('github')}
-                            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] font-medium hover:border-[#8ccf7e]/50 transition-all"
+                            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium hover:border-violet-500/30 hover:bg-zinc-900/50 transition-all"
                         >
                             <Github className="w-5 h-5" />
                             Continue with GitHub
@@ -130,52 +130,52 @@ export default function SignupPage() {
                     </div>
 
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="flex-1 h-px bg-[#2d3437]" />
-                        <span className="text-sm text-[#8a9899]">or</span>
-                        <div className="flex-1 h-px bg-[#2d3437]" />
+                        <div className="flex-1 h-px bg-zinc-800" />
+                        <span className="text-sm text-zinc-500">or</span>
+                        <div className="flex-1 h-px bg-zinc-800" />
                     </div>
 
                     {/* Signup Form */}
                     <form onSubmit={handleSignup} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-[#dadada] mb-2">
+                            <label className="block text-sm font-medium text-white mb-2">
                                 Full name
                             </label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                                 <input
                                     type="text"
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
                                     placeholder="John Doe"
-                                    className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                    className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-[#dadada] mb-2">
+                            <label className="block text-sm font-medium text-white mb-2">
                                 Email
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="you@example.com"
                                     required
-                                    className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                    className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-[#dadada] mb-2">
+                            <label className="block text-sm font-medium text-white mb-2">
                                 Password
                             </label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                                 <input
                                     type="password"
                                     value={password}
@@ -183,16 +183,16 @@ export default function SignupPage() {
                                     placeholder="••••••••"
                                     required
                                     minLength={6}
-                                    className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                    className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                                 />
                             </div>
-                            <p className="mt-1 text-xs text-[#8a9899]">Minimum 6 characters</p>
+                            <p className="mt-1 text-xs text-zinc-500">Minimum 6 characters</p>
                         </div>
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] font-semibold rounded-xl hover:shadow-lg hover:shadow-[#8ccf7e]/30 transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-violet-600/30 transition-all disabled:opacity-50"
                         >
                             {isLoading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -206,22 +206,25 @@ export default function SignupPage() {
 
                         {/* Slow loading message */}
                         {showSlowMessage && (
-                            <p className="flex items-center justify-center gap-2 text-center text-sm text-[#e5c76b] animate-pulse">
+                            <p className="flex items-center justify-center gap-2 text-center text-sm text-amber-400 animate-pulse">
                                 <Loader2 className="w-4 h-4 animate-spin" />
                                 Server is warming up... This can take up to 30 seconds on first visit.
                             </p>
                         )}
                     </form>
 
-                    <p className="mt-4 text-xs text-center text-[#8a9899]">
-                        By signing up, you agree to our Terms of Service and Privacy Policy.
+                    <p className="mt-4 text-xs text-center text-zinc-500">
+                        By signing up, you agree to our{' '}
+                        <Link href="/terms" className="text-violet-400 hover:underline">Terms of Service</Link>
+                        {' '}and{' '}
+                        <Link href="/privacy" className="text-violet-400 hover:underline">Privacy Policy</Link>.
                     </p>
                 </div>
 
                 {/* Login link */}
-                <p className="text-center mt-6 text-[#8a9899]">
+                <p className="text-center mt-6 text-zinc-400">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-[#8ccf7e] hover:underline">
+                    <Link href="/login" className="text-violet-400 hover:text-violet-300 hover:underline">
                         Sign in
                     </Link>
                 </p>

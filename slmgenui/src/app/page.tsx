@@ -1,12 +1,10 @@
 /**
- * SLMGEN Landing Page.
+ * SLMGEN V3.0.0 Landing Page.
  * 
- * Hero section with stats and CTA to dashboard.
- * Everblush themed with Lucide icons.
- * Enhanced with Framer Motion animations and text diffusion effects.
+ * Completely redesigned with a fresh, modern look.
+ * V3.0.0 banner, new hero, feature highlights.
  * 
  * @author Eshan Roy <eshanized@proton.me>
- * @contributor Vedant Singh Rajput <teleported0722@gmail.com>
  * @license MIT
  * @copyright 2026 Eshan Roy
  */
@@ -23,292 +21,315 @@ import {
   Settings,
   Target,
   Zap,
-  Diamond,
   Sparkles,
-  Star,
-  Hexagon,
-  CircleDot,
+  FileText,
+  Gauge,
+  Download,
+  Wand2,
+  Brain,
+  Cpu,
+  Layers,
+  Terminal,
+  Cloud,
+  Server,
 } from '@/components/icons';
-
-// Supported models to Showcase (V3.0.0 - 18 models)
-const MODELS = [
-  { name: 'Qwen 3.5', size: '32B', Icon: Star, color: 'text-[#8ccf7e]' },
-  { name: 'Llama 3.3', size: '8B', Icon: CircleDot, color: 'text-[#e5c76b]' },
-  { name: 'Llama 3.3 70B', size: '70B', Icon: CircleDot, color: 'text-[#e5c76b]' },
-  { name: 'DeepSeek V3', size: '84B', Icon: Diamond, color: 'text-[#c47fd5]' },
-  { name: 'Mistral Small 3', size: '24B', Icon: Hexagon, color: 'text-[#6cbfbf]' },
-  { name: 'Qwen 3', size: '4B', Icon: Star, color: 'text-[#8ccf7e]' },
-  { name: 'Qwen 2.5 14B', size: '14B', Icon: Star, color: 'text-[#8ccf7e]' },
-  { name: 'Gemma 3', size: '4B', Icon: Sparkles, color: 'text-[#c47fd5]' },
-  { name: 'SmolLM3', size: '3B', Icon: Sparkles, color: 'text-[#e69875]' },
-  { name: 'Phi-4 Mini', size: '3.8B', Icon: Diamond, color: 'text-[#67b0e8]' },
-  { name: 'Llama 3.2 3B', size: '3B', Icon: CircleDot, color: 'text-[#e5c76b]' },
-  { name: 'Gemma 2', size: '2B', Icon: Sparkles, color: 'text-[#c47fd5]' },
-  { name: 'Qwen 2.5', size: '3B', Icon: Star, color: 'text-[#8ccf7e]' },
-  { name: 'Mistral', size: '7B', Icon: Hexagon, color: 'text-[#6cbfbf]' },
-  { name: 'SmolLM2', size: '1.7B', Icon: Sparkles, color: 'text-[#e69875]' },
-  { name: 'Llama 3.2 1B', size: '1B', Icon: CircleDot, color: 'text-[#e5c76b]' },
-  { name: 'DeepSeek Coder', size: '1.3B', Icon: Diamond, color: 'text-[#c47fd5]' },
-  { name: 'Phi-3.5 Mini', size: '3.8B', Icon: Diamond, color: 'text-[#67b0e8]' },
-];
-
-// Key Stats (V3.0.0)
-const STATS = [
-  { value: '18', label: 'SLM Models', sublabel: 'up to 84B params' },
-  { value: '6', label: 'Task Types', sublabel: 'classify to generation' },
-  { value: '100%', label: 'Free', sublabel: 'runs on Colab T4' },
-  { value: '128K', label: 'Max Context', sublabel: 'token context window' },
-];
-
-// How it works steps
-const STEPS = [
-  { step: '1', title: 'Upload', desc: 'Drop your ChatML JSONL dataset', Icon: Upload },
-  { step: '2', title: 'Analyze', desc: 'Auto-detect tokens, quality, format', Icon: Settings },
-  { step: '3', title: 'Match', desc: 'AI scores models by task + deploy fit', Icon: Target },
-  { step: '4', title: 'Generate', desc: 'Get your self-contained Colab notebook', Icon: Rocket },
-];
 
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
+    transition: { staggerChildren: 0.08, delayChildren: 0.15 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 }
-  },
+  hidden: { opacity: 0, y: 25 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-const diffusionVariant: Variants = {
-  hidden: { filter: 'blur(12px)', opacity: 0, y: 10 },
-  visible: {
-    filter: 'blur(0px)',
-    opacity: 1,
-    y: 0,
-    transition: { duration: 1.2, ease: "easeOut" }
-  }
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7 } },
 };
+
+const floatVariant = {
+  initial: { y: 0 },
+  animate: { y: [0, -12, 0], transition: { duration: 3, repeat: Infinity } }
+};
+
+// V3.0.0 Features
+const FEATURES = [
+  {
+    icon: FileText,
+    title: 'Dataset Converter',
+    description: 'CSV, TSV, JSON, Alpaca, ShareGPT → ChatML',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
+  },
+  {
+    icon: Gauge,
+    title: 'Training Presets',
+    description: 'Quick Demo, Production, Edge Optimize',
+    color: 'from-purple-500 to-pink-500',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+  },
+  {
+    icon: Download,
+    title: 'Export Pipeline',
+    description: 'Ollama, GGUF, vLLM, HuggingFace',
+    color: 'from-emerald-500 to-teal-500',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
+  },
+  {
+    icon: Brain,
+    title: '18 Models',
+    description: 'Up to 84B params, 128K context',
+    color: 'from-amber-500 to-orange-500',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+  },
+];
+
+// Models showcase
+const MODELS = [
+  { name: 'Qwen 3.5', size: '32B', color: 'bg-green-500' },
+  { name: 'Llama 3.3', size: '8B', color: 'bg-yellow-500' },
+  { name: 'DeepSeek V3', size: '84B', color: 'bg-purple-500' },
+  { name: 'Mistral Small 3', size: '24B', color: 'bg-cyan-500' },
+  { name: 'Gemma 3', size: '4B', color: 'bg-pink-500' },
+  { name: 'SmolLM3', size: '3B', color: 'bg-orange-500' },
+];
+
+// Stats
+const STATS = [
+  { value: '18', label: 'SLM Models', desc: 'Latest 2026 models' },
+  { value: '128K', label: 'Max Context', desc: 'Token context window' },
+  { value: '4', label: 'Presets', desc: 'Quick to Production' },
+  { value: '4', label: 'Export Formats', desc: 'Ollama, GGUF, vLLM, HF' },
+];
+
+// How it works
+const STEPS = [
+  { num: '01', title: 'Upload', desc: 'Drop your dataset or convert from CSV/JSON' },
+  { num: '02', title: 'Analyze', desc: 'Auto-detect quality, format, characteristics' },
+  { num: '03', title: 'Match', desc: 'AI scores 18 models for your task & data' },
+  { num: '04', title: 'Generate', desc: 'Get ready-to-run Colab notebook' },
+];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen hero-gradient overflow-hidden selection:bg-[#8ccf7e] selection:text-[#141b1e]">
-      {/* Navigation */}
+    <div className="min-h-screen bg-[#0a0a0b] text-white">
       <Navbar />
+      
+      {/* V3.0.0 Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="pt-20 px-4 text-center"
+      >
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-600/20 via-purple-600/20 to-fuchsia-600/20 border border-violet-500/30 backdrop-blur-sm">
+          <Sparkles className="w-4 h-4 text-violet-400" />
+          <span className="text-sm font-medium bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text text-transparent">
+            New in V3.0.0
+          </span>
+          <span className="text-xs text-zinc-400">Dataset Converter • Training Presets • Export Pipeline</span>
+        </div>
+      </motion.div>
 
       {/* Hero Section */}
-      <main className="container mx-auto px-4 py-20 relative z-10">
+      <main className="container mx-auto px-4 py-16 relative">
+        {/* Background glow effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-violet-600/20 rounded-full blur-[128px]" />
+          <div className="absolute top-1/3 -right-32 w-96 h-96 bg-cyan-600/15 rounded-full blur-[128px]" />
+        </div>
+
         <motion.div
-          className="text-center max-w-4xl mx-auto"
+          className="text-center max-w-4xl mx-auto relative z-10"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
-          {/* Badge */}
-          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e2528]/80 rounded-full border border-[#2d3437] mb-8 backdrop-blur-sm">
-            <span className="w-2 h-2 bg-[#8ccf7e] rounded-full animate-pulse" />
-            <span className="text-sm text-[#8a9899]">Powered by Unsloth & LoRA</span>
-          </motion.div>
-
-          {/* Headline with Diffusion Effect */}
-          <motion.h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#dadada] mb-6 leading-[1.1] tracking-tight">
-            <motion.span variants={diffusionVariant} className="inline-block">Your Data.</motion.span><br />
-            <motion.span
-              variants={diffusionVariant}
-              className="gradient-text text-glow inline-block"
-            >
-              Best Model. Matched.
-            </motion.span>
+          {/* Main Headline */}
+          <motion.h1 
+            variants={fadeInUp}
+            className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6"
+          >
+            <span className="text-white">Fine-tune </span>
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+              SLMs
+            </span>
+            <br />
+            <span className="text-zinc-300">in seconds.</span>
           </motion.h1>
 
-          <motion.p variants={itemVariants} className="text-xl text-[#8a9899] max-w-2xl mx-auto mb-10 leading-relaxed">
-            SLMGEN analyzes your dataset and scores 18 small language models
-            to find the perfect fit for your task and deployment target.<br />
-            <strong className="text-[#dadada]">One notebook. Zero setup. Ready to train.</strong>
+          <motion.p 
+            variants={itemVariants}
+            className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed"
+          >
+            Upload your dataset, get AI-matched model recommendations, and receive a ready-to-run 
+            <span className="text-violet-400"> Google Colab notebook</span>. 
+            Powered by <span className="text-cyan-400">Unsloth</span> for 2x faster, 70% less memory training.
           </motion.p>
 
           {/* CTA Buttons */}
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
+          <motion.div 
+            variants={itemVariants}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+          >
             <Link
               href="/dashboard"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] font-bold rounded-xl text-lg shadow-lg shadow-[#8ccf7e]/20 hover:shadow-[#8ccf7e]/40 hover:-translate-y-1 transition-all duration-300"
+              className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold rounded-xl text-base shadow-lg shadow-violet-600/25 hover:shadow-violet-500/40 transition-all duration-300"
             >
-              Start Fine-Tuning
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Rocket className="w-5 h-5" />
+              Start Fine-Tuning Free
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <a
-              href="#how-it-works"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#1e2528]/80 text-[#dadada] font-semibold rounded-xl text-lg border border-[#2d3437] hover:border-[#8ccf7e] hover:bg-[#232a2d] transition-all duration-300"
+              href="#features"
+              className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-zinc-900/60 hover:bg-zinc-800/80 text-zinc-300 hover:text-white font-medium rounded-xl border border-zinc-700 hover:border-zinc-600 transition-all duration-300"
             >
-              How it Works
+              See What's New
             </a>
+          </motion.div>
+
+          {/* Floating model cards */}
+          <motion.div 
+            variants={floatVariant}
+            initial="initial"
+            animate="animate"
+            className="flex justify-center gap-3 mb-16"
+          >
+            {MODELS.map((model) => (
+              <div 
+                key={model.name}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-900/80 border border-zinc-800 backdrop-blur-sm"
+              >
+                <div className={`w-2 h-2 rounded-full ${model.color}`} />
+                <span className="text-sm font-medium text-zinc-200">{model.name}</span>
+                <span className="text-xs text-zinc-500">{model.size}</span>
+              </div>
+            ))}
           </motion.div>
         </motion.div>
 
-        {/* Stats / Features */}
+        {/* V3.0.0 Features Grid */}
         <motion.div
           id="features"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-24 max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
+          className="max-w-5xl mx-auto mt-20"
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-3">
+              V3.0.0 Features
+            </h2>
+            <p className="text-zinc-400">
+              More models, more formats, more flexibility
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {FEATURES.map((feature, idx) => (
+              <motion.div
+                key={feature.title}
+                variants={itemVariants}
+                className={`p-5 rounded-2xl ${feature.bgColor} border ${feature.borderColor} backdrop-blur-sm`}
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4`}>
+                  <feature.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1.5">{feature.title}</h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Stats Section */}
+        <motion.div
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-16"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
         >
           {STATS.map((stat) => (
-            <motion.div
+            <div 
               key={stat.label}
-              className="text-center p-6 rounded-2xl glass-interactive"
-              whileHover={{ scale: 1.05 }}
+              className="text-center p-5 rounded-xl bg-zinc-900/40 border border-zinc-800"
             >
-              <div className="text-4xl font-bold gradient-text mb-2">{stat.value}</div>
-              <div className="text-[#dadada] font-medium text-lg">{stat.label}</div>
-              <div className="text-sm text-[#8a9899] mt-1">{stat.sublabel}</div>
-            </motion.div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                {stat.value}
+              </div>
+              <div className="text-sm font-medium text-zinc-300 mt-1">{stat.label}</div>
+              <div className="text-xs text-zinc-500">{stat.desc}</div>
+            </div>
           ))}
         </motion.div>
 
-        {/* Supported Models */}
-        <div id="models" className="mt-32 text-center">
-          <motion.h2
-            className="text-3xl font-bold text-[#dadada] mb-10"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            Supported Models
-          </motion.h2>
-          <motion.div
-            className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={containerVariants}
-          >
-            {MODELS.map((model) => (
-              <motion.div
-                key={model.name}
-                variants={itemVariants}
-                className="flex items-center gap-3 px-5 py-3 bg-[#1e2528]/60 rounded-xl border border-[#2d3437] hover:border-[#8ccf7e]/50 hover:bg-[#1e2528]/80 transition-all cursor-default"
-                whileHover={{ scale: 1.05, y: -2 }}
-              >
-                <model.Icon className={`w-5 h-5 ${model.color}`} />
-                <div className="text-left">
-                  <div className="font-semibold text-[#dadada]">{model.name}</div>
-                  <div className="text-xs text-[#8a9899] font-mono">{model.size}</div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+        {/* How It Works */}
+        <div className="max-w-5xl mx-auto mt-24">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-3">
+              How It Works
+            </h2>
+            <p className="text-zinc-400">
+              Four simple steps to your fine-tuned model
+            </p>
+          </div>
 
-        {/* How it Works */}
-        <div id="how-it-works" className="mt-32 max-w-6xl mx-auto">
-          <motion.h2
-            className="text-3xl font-bold text-[#dadada] mb-16 text-center"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            How It Works
-          </motion.h2>
           <div className="grid md:grid-cols-4 gap-6">
-            {STEPS.map((item, idx) => (
+            {STEPS.map((step, idx) => (
               <motion.div
-                key={item.step}
-                className="relative p-8 rounded-2xl glass-interactive text-center group"
-                initial={{ opacity: 0, y: 30 }}
+                key={step.num}
+                className="relative p-6 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-center"
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -5 }}
               >
-                <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#8ccf7e]/10 to-[#c47fd5]/10 flex items-center justify-center group-hover:from-[#8ccf7e]/20 group-hover:to-[#c47fd5]/20 transition-all border border-[#2d3437] group-hover:border-[#8ccf7e]/30">
-                  <item.Icon className="w-8 h-8 text-[#8ccf7e]" />
-                </div>
-                <div className="text-xl font-bold text-[#dadada] mb-3">{item.title}</div>
-                <div className="text-[#8a9899] leading-relaxed">{item.desc}</div>
+                <div className="text-5xl font-bold text-zinc-700/50 mb-3">{step.num}</div>
+                <h3 className="text-lg font-semibold text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">{step.desc}</p>
                 {idx < STEPS.length - 1 && (
-                  <div className="hidden md:flex absolute top-1/2 -right-3 w-6 items-center justify-center text-[#2d3437] transform -translate-y-1/2 z-10">
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
+                  <ArrowRight className="hidden md:block absolute top-1/2 -right-3 w-5 h-5 text-zinc-700 transform -translate-y-1/2" />
                 )}
               </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Features Section */}
-        <div className="mt-32 max-w-6xl mx-auto mb-20">
-          <motion.h2
-            className="text-3xl font-bold text-[#dadada] mb-16 text-center"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
+        {/* CTA Section */}
+        <motion.div
+          className="text-center mt-24 py-16"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to fine-tune?
+          </h2>
+          <p className="text-zinc-400 mb-8">
+            Start for free. No setup required. Runs on Google Colab.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-600/25 transition-all"
           >
-            Why SLMGEN?
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <motion.div
-              className="p-8 rounded-2xl glass-glow"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="w-14 h-14 rounded-2xl bg-[#8ccf7e]/10 flex items-center justify-center mb-6">
-                <Target className="w-7 h-7 text-[#8ccf7e]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#dadada] mb-3">100-Point Scoring</h3>
-              <p className="text-[#8a9899] leading-relaxed">
-                AI scores each model based on 3 distinct factors: <span className="text-[#dadada]">Task Fit (50pts)</span>, <span className="text-[#dadada]">Deployment Target (30pts)</span>, and <span className="text-[#dadada]">Data Characteristics (20pts)</span>.
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="p-8 rounded-2xl glass-glow"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="w-14 h-14 rounded-2xl bg-[#67b0e8]/10 flex items-center justify-center mb-6">
-                <Zap className="w-7 h-7 text-[#67b0e8]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#dadada] mb-3">Self-Contained Notebooks</h3>
-              <p className="text-[#8a9899] leading-relaxed">
-                No messy uploads. Your dataset is <span className="text-[#dadada]">base64-embedded</span> directly into the generated notebook. Just open in Colab and hit &quot;Run All&quot;.
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="p-8 rounded-2xl glass-glow"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="w-14 h-14 rounded-2xl bg-[#c47fd5]/10 flex items-center justify-center mb-6">
-                <Sparkles className="w-7 h-7 text-[#c47fd5]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#dadada] mb-3">Cloud to Mobile</h3>
-              <p className="text-[#8a9899] leading-relaxed">
-                Optimized export targets for <span className="text-[#dadada]">GGUF (Llama.cpp)</span>, <span className="text-[#dadada]">Ollama</span>, and <span className="text-[#dadada]">vLLM</span>. Deploy anywhere from A100s to edge devices.
-              </p>
-            </motion.div>
-          </div>
-        </div>
+            <Wand2 className="w-5 h-5" />
+            Start Fine-Tuning Now
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

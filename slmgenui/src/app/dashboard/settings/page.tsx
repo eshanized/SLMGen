@@ -59,27 +59,27 @@ export default function ProfileSettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#dadada]">Profile</h1>
-                <p className="text-[#8a9899] mt-1">Manage your public profile information</p>
+                <h1 className="text-2xl font-bold text-white">Profile</h1>
+                <p className="text-zinc-500 mt-1">Manage your public profile information</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Avatar */}
-                <div className="p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl">
-                    <label className="block text-sm font-medium text-[#dadada] mb-4">
+                <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
+                    <label className="block text-sm font-medium text-white mb-4">
                         Profile Picture
                     </label>
                     <div className="flex items-center gap-6">
                         <div className="relative">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center text-[#141b1e] font-bold text-3xl overflow-hidden">
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
                                 {avatarUrl ? (
                                     <Image src={avatarUrl} alt="Avatar" fill className="object-cover" unoptimized />
                                 ) : (
                                     fullName?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || '?'
                                 )}
                             </div>
-                            <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#2d3437] rounded-full flex items-center justify-center border-2 border-[#1e2528]">
-                                <Camera className="w-4 h-4 text-[#8a9899]" />
+                            <div className="absolute bottom-0 right-0 w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center border-2 border-zinc-900">
+                                <Camera className="w-4 h-4 text-zinc-500" />
                             </div>
                         </div>
                         <div className="flex-1">
@@ -88,9 +88,9 @@ export default function ProfileSettingsPage() {
                                 value={avatarUrl}
                                 onChange={(e) => setAvatarUrl(e.target.value)}
                                 placeholder="https://example.com/avatar.jpg"
-                                className="w-full px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                             />
-                            <p className="mt-2 text-xs text-[#8a9899]">
+                            <p className="mt-2 text-xs text-zinc-500">
                                 Enter a URL for your profile picture
                             </p>
                         </div>
@@ -98,50 +98,50 @@ export default function ProfileSettingsPage() {
                 </div>
 
                 {/* Full Name */}
-                <div className="p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl">
-                    <label className="block text-sm font-medium text-[#dadada] mb-2">
+                <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
+                    <label className="block text-sm font-medium text-white mb-2">
                         Full Name
                     </label>
                     <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                         <input
                             type="text"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
                             placeholder="Your full name"
-                            className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                            className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                         />
                     </div>
-                    <p className="mt-2 text-xs text-[#8a9899]">
+                    <p className="mt-2 text-xs text-zinc-500">
                         This name will be displayed on your profile
                     </p>
                 </div>
 
                 {/* Email (read-only) */}
-                <div className="p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl opacity-60">
-                    <label className="block text-sm font-medium text-[#dadada] mb-2">
+                <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl opacity-60">
+                    <label className="block text-sm font-medium text-white mb-2">
                         Email Address
                     </label>
                     <input
                         type="email"
                         value={profile?.email || ''}
                         disabled
-                        className="w-full px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#8a9899] cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 cursor-not-allowed"
                     />
-                    <p className="mt-2 text-xs text-[#8a9899]">
+                    <p className="mt-2 text-xs text-zinc-500">
                         Email cannot be changed. Contact support if you need to update it.
                     </p>
                 </div>
 
                 {/* Error/Success */}
                 {error && (
-                    <div className="p-4 bg-[#e67e80]/10 border border-[#e67e80]/30 rounded-xl text-[#e67e80] text-sm">
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="p-4 bg-[#8ccf7e]/10 border border-[#8ccf7e]/30 rounded-xl text-[#8ccf7e] text-sm flex items-center gap-2">
+                    <div className="p-4 bg-violet-500/10 border border-violet-500/30 rounded-xl text-violet-400 text-sm flex items-center gap-2">
                         <Check className="w-4 h-4" />
                         Profile updated successfully!
                     </div>
@@ -152,7 +152,7 @@ export default function ProfileSettingsPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] font-semibold rounded-xl hover:shadow-lg hover:shadow-[#8ccf7e]/30 transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-violet-600/30 transition-all disabled:opacity-50"
                     >
                         {isLoading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />

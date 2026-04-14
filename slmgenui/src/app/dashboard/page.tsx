@@ -262,12 +262,12 @@ export default function DashboardPage() {
     }, [session]);
 
     return (
-        <div className="min-h-screen bg-[#141b1e] selection:bg-[#8ccf7e] selection:text-[#141b1e]">
+        <div className="min-h-screen bg-zinc-950 selection:bg-violet-500 selection:text-white">
             {/* Header */}
             <DashboardHeader />
 
             {/* Progress Bar */}
-            <div className="border-b border-[#2d3437] bg-[#1e2528]/50 backdrop-blur-sm sticky top-0 z-20">
+            <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between max-w-2xl mx-auto">
                         {STEPS.map((step, idx) => (
@@ -277,10 +277,10 @@ export default function DashboardPage() {
                                     className={`
                                         flex items-center justify-center w-10 h-10 rounded-full font-medium transition-all duration-300
                                         ${idx < currentStepIndex
-                                            ? 'bg-[#8ccf7e] text-[#141b1e] scale-100' // Completed
+                                            ? 'bg-violet-600 text-white scale-100' // Completed
                                             : idx === currentStepIndex
-                                                ? 'bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] shadow-lg shadow-[#8ccf7e]/30 scale-110 ring-4 ring-[#8ccf7e]/10' // Current
-                                                : 'bg-[#1e2528] text-[#8a9899] border border-[#2d3437] group-hover:border-[#8ccf7e]/50 group-hover:text-[#dadada]' // Future
+                                                ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-600/30 scale-110 ring-4 ring-violet-500/10' // Current
+                                                : 'bg-zinc-900 text-zinc-500 border border-zinc-800 group-hover:border-violet-500/50 group-hover:text-white' // Future
                                         }
                                     `}
                                 >
@@ -292,16 +292,16 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Label */}
-                                <span className={`ml-3 hidden sm:inline transition-colors duration-300 ${idx === currentStepIndex ? 'text-[#dadada] font-medium' : 'text-[#8a9899] group-hover:text-[#dadada]'
+                                <span className={`ml-3 hidden sm:inline transition-colors duration-300 ${idx === currentStepIndex ? 'text-white font-medium' : 'text-zinc-500 group-hover:text-white'
                                     }`}>
                                     {step.label}
                                 </span>
 
                                 {/* Connector Line */}
                                 {idx < STEPS.length - 1 && (
-                                    <div className="w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 bg-[#2d3437] relative overflow-hidden rounded-full">
+                                    <div className="w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 bg-zinc-800 relative overflow-hidden rounded-full">
                                         <div
-                                            className={`absolute inset-0 bg-[#8ccf7e] transition-transform duration-500 ease-out origin-left ${idx < currentStepIndex ? 'scale-x-100' : 'scale-x-0'
+                                            className={`absolute inset-0 bg-violet-600 transition-transform duration-500 ease-out origin-left ${idx < currentStepIndex ? 'scale-x-100' : 'scale-x-0'
                                                 }`}
                                         />
                                     </div>
@@ -314,16 +314,16 @@ export default function DashboardPage() {
                     {session.isJobProcessing && (
                         <div className="mt-4 max-w-2xl mx-auto">
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm text-[#8a9899]">
+                                <span className="text-sm text-zinc-400">
                                     {PIPELINE_STEPS[session.currentPipelineStep]}...
                                 </span>
-                                <span className="text-sm text-[#8ccf7e] font-medium">
+                                <span className="text-sm text-violet-400 font-medium">
                                     {session.progressPercent}%
                                 </span>
                             </div>
-                            <div className="h-1.5 bg-[#141b1e] rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden">
                                 <motion.div
-                                    className="h-full bg-gradient-to-r from-[#8ccf7e] to-[#67b0e8]"
+                                    className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${session.progressPercent}%` }}
                                     transition={{ duration: 0.5 }}
@@ -349,8 +349,8 @@ export default function DashboardPage() {
                                 className="space-y-8"
                             >
                                 <div className="text-center">
-                                    <h1 className="text-3xl font-bold text-[#dadada]">Upload Your Dataset</h1>
-                                    <p className="text-[#8a9899] mt-2">
+                                    <h1 className="text-3xl font-bold text-white">Upload Your Dataset</h1>
+                                    <p className="text-zinc-400 mt-2">
                                         Start by uploading your JSONL training data
                                     </p>
                                 </div>
@@ -361,9 +361,9 @@ export default function DashboardPage() {
                                 />
 
                                 {/* Example Format */}
-                                <div className="p-6 bg-[#1e2528]/80 rounded-xl border border-[#2d3437]">
-                                    <h3 className="font-medium text-[#dadada] mb-3">Expected Format</h3>
-                                    <pre className="text-sm text-[#8a9899] font-mono overflow-x-auto">
+                                <div className="p-6 bg-zinc-900/80 rounded-xl border border-zinc-800">
+                                    <h3 className="font-medium text-white mb-3">Expected Format</h3>
+                                    <pre className="text-sm text-zinc-400 font-mono overflow-x-auto">
                                         {`{"messages": [{"role": "user", "content": "Hello!"}, {"role": "assistant", "content": "Hi there!"}]}
 {"messages": [{"role": "system", "content": "You are helpful."}, {"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]}`}
                                     </pre>
@@ -427,8 +427,8 @@ export default function DashboardPage() {
                                 className="space-y-8"
                             >
                                 <div className="text-center">
-                                    <h1 className="text-3xl font-bold text-[#dadada]">Model Recommendation</h1>
-                                    <p className="text-[#8a9899] mt-2">
+                                    <h1 className="text-3xl font-bold text-white">Model Recommendation</h1>
+                                    <p className="text-zinc-400 mt-2">
                                         Based on your data and requirements, here&apos;s what we suggest
                                     </p>
                                 </div>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                                     <button
                                         onClick={() => handleGenerateNotebook()}
                                         disabled={isLoading || session.isJobProcessing}
-                                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] font-semibold rounded-xl text-lg hover:shadow-xl hover:shadow-[#8ccf7e]/30 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl text-lg hover:shadow-xl hover:shadow-violet-600/30 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoading || session.isJobProcessing ? (
                                             <>
@@ -468,7 +468,7 @@ export default function DashboardPage() {
                                 {/* Alternative Models */}
                                 {session.recommendation.alternatives.length > 0 && (
                                     <div>
-                                        <h2 className="text-xl font-semibold text-[#dadada] mb-4">Alternatives</h2>
+                                        <h2 className="text-xl font-semibold text-white mb-4">Alternatives</h2>
                                         <div className="grid gap-4">
                                             {session.recommendation.alternatives.map((model) => (
                                                 <ModelCard
@@ -538,7 +538,7 @@ function ProcessingStatusCard({
             className={`p-5 rounded-xl border ${
                 isFailed 
                     ? 'bg-red-500/10 border-red-500/30' 
-                    : 'bg-[#1e2528] border-[#2d3437]'
+                    : 'bg-zinc-900 border-zinc-800'
             }`}
         >
             <div className="flex items-center justify-between mb-4">
@@ -546,11 +546,11 @@ function ProcessingStatusCard({
                     {isFailed ? (
                         <AlertCircle className="w-5 h-5 text-red-400" />
                     ) : isQueued ? (
-                        <Loader2 className="w-5 h-5 text-[#67b0e8] animate-spin" />
+                        <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
                     ) : (
-                        <Loader2 className="w-5 h-5 text-[#8ccf7e] animate-spin" />
+                        <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
                     )}
-                    <span className="font-medium text-[#dadada]">
+                    <span className="font-medium text-white">
                         {isQueued && 'Queued for processing...'}
                         {isProcessing && PIPELINE_STEPS[currentStep as keyof typeof PIPELINE_STEPS] + '...'}
                         {isFailed && 'Processing failed'}
@@ -570,9 +570,9 @@ function ProcessingStatusCard({
             {/* Progress bar */}
             {!isFailed && (
                 <div className="mb-3">
-                    <div className="h-2 bg-[#141b1e] rounded-full overflow-hidden">
+                    <div className="h-2 bg-zinc-950 rounded-full overflow-hidden">
                         <motion.div
-                            className="h-full bg-gradient-to-r from-[#8ccf7e] to-[#67b0e8]"
+                            className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 0.5 }}
@@ -588,7 +588,7 @@ function ProcessingStatusCard({
 
             {/* Hint */}
             {!isFailed && (
-                <p className="text-xs text-[#8a9899] mt-2">
+                <p className="text-xs text-zinc-500 mt-2">
                     You can continue configuring while processing happens in the background.
                 </p>
             )}

@@ -20,9 +20,8 @@ import {
     ChevronRight,
     LogOut,
     User,
+    Rocket,
 } from '@/components/icons';
-
-import Image from 'next/image';
 
 interface NavItem {
     label: string;
@@ -66,25 +65,20 @@ export function DashboardHeader({ showBreadcrumb = false }: DashboardHeaderProps
     };
 
     return (
-        <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#141b1e]/90 border-b border-[#2d3437]">
+        <header className="sticky top-0 z-50 backdrop-blur-xl bg-zinc-950/90 border-b border-zinc-800">
             <div className="container mx-auto px-4">
                 {/* Main Navigation */}
                 <nav className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="relative w-9 h-9">
-                            <Image
-                                src="/logo.svg"
-                                alt="SLMGEN Logo"
-                                fill
-                                className="object-contain group-hover:scale-110 transition-transform"
-                            />
+                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Rocket className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-[#dadada] tracking-wide">SLMGEN</span>
+                        <span className="text-xl font-bold text-white tracking-wide">SLMGEN</span>
                     </Link>
 
                     {/* Center Navigation */}
-                    <div className="hidden md:flex items-center gap-1 bg-[#1e2528]/50 rounded-xl p-1 border border-[#2d3437]/50">
+                    <div className="hidden md:flex items-center gap-1 bg-zinc-900/50 rounded-xl p-1 border border-zinc-800/50">
                         {DASHBOARD_NAV.map((item) => (
                             <Link
                                 key={item.label}
@@ -92,8 +86,8 @@ export function DashboardHeader({ showBreadcrumb = false }: DashboardHeaderProps
                                 className={`
                                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
                                     ${isActive(item.href)
-                                        ? 'bg-gradient-to-r from-[#8ccf7e]/20 to-[#6cbfbf]/20 text-[#8ccf7e] shadow-sm'
-                                        : 'text-[#8a9899] hover:text-[#dadada] hover:bg-[#232a2d]'
+                                        ? 'bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-violet-400 shadow-sm'
+                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                                     }
                                 `}
                             >
@@ -112,8 +106,8 @@ export function DashboardHeader({ showBreadcrumb = false }: DashboardHeaderProps
                                 className={`
                                     p-2 rounded-lg transition-all
                                     ${isActive(item.href)
-                                        ? 'bg-[#8ccf7e]/10 text-[#8ccf7e]'
-                                        : 'text-[#8a9899] hover:text-[#dadada] hover:bg-[#1e2528]'
+                                        ? 'bg-violet-600/10 text-violet-400'
+                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                                     }
                                 `}
                                 title={item.label}
@@ -125,16 +119,17 @@ export function DashboardHeader({ showBreadcrumb = false }: DashboardHeaderProps
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-2">
-                        <button
-                            className="hidden md:flex items-center gap-2 px-3 py-2 text-[#8a9899] hover:text-[#dadada] hover:bg-[#1e2528] rounded-lg transition-all text-sm"
+                        <Link
+                            href="/dashboard/settings/account"
+                            className="hidden md:flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition-all text-sm"
                             title="Account"
                         >
                             <User className="w-4 h-4" />
                             <span className="hidden lg:inline">Account</span>
-                        </button>
+                        </Link>
                         <Link
                             href="/"
-                            className="flex items-center gap-2 px-3 py-2 text-[#8a9899] hover:text-[#e57474] hover:bg-[#e57474]/10 rounded-lg transition-all text-sm"
+                            className="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all text-sm"
                             title="Exit Dashboard"
                         >
                             <LogOut className="w-4 h-4" />
@@ -148,20 +143,20 @@ export function DashboardHeader({ showBreadcrumb = false }: DashboardHeaderProps
                     <div className="flex items-center gap-2 py-2 text-sm overflow-x-auto">
                         <Link
                             href="/"
-                            className="text-[#8a9899] hover:text-[#dadada] transition-colors whitespace-nowrap"
+                            className="text-zinc-500 hover:text-white transition-colors whitespace-nowrap"
                         >
                             Home
                         </Link>
                         {getBreadcrumbs().map((crumb, idx) => (
                             <div key={crumb.href} className="flex items-center gap-2">
-                                <ChevronRight className="w-4 h-4 text-[#2d3437]" />
+                                <ChevronRight className="w-4 h-4 text-zinc-700" />
                                 <Link
                                     href={crumb.href}
                                     className={`
                                         transition-colors whitespace-nowrap
                                         ${idx === getBreadcrumbs().length - 1
-                                            ? 'text-[#dadada] font-medium'
-                                            : 'text-[#8a9899] hover:text-[#dadada]'
+                                            ? 'text-white font-medium'
+                                            : 'text-zinc-500 hover:text-white'
                                         }
                                     `}
                                 >

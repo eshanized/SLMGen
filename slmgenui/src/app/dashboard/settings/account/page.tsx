@@ -74,19 +74,19 @@ export default function AccountSettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#dadada]">Account</h1>
-                <p className="text-[#8a9899] mt-1">Manage your account security and settings</p>
+                <h1 className="text-2xl font-bold text-white">Account</h1>
+                <p className="text-zinc-500 mt-1">Manage your account security and settings</p>
             </div>
 
             {/* Change Password */}
-            <form onSubmit={handlePasswordChange} className="p-6 bg-[#1e2528] border border-[#2d3437] rounded-xl space-y-4">
+            <form onSubmit={handlePasswordChange} className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-4">
                 <div className="flex items-center gap-2 mb-4">
-                    <Lock className="w-5 h-5 text-[#8ccf7e]" />
-                    <h2 className="text-lg font-semibold text-[#dadada]">Change Password</h2>
+                    <Lock className="w-5 h-5 text-violet-400" />
+                    <h2 className="text-lg font-semibold text-white">Change Password</h2>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#dadada] mb-2">
+                    <label className="block text-sm font-medium text-white mb-2">
                         New Password
                     </label>
                     <input
@@ -96,12 +96,12 @@ export default function AccountSettingsPage() {
                         placeholder="••••••••"
                         minLength={6}
                         required
-                        className="w-full px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                        className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#dadada] mb-2">
+                    <label className="block text-sm font-medium text-white mb-2">
                         Confirm New Password
                     </label>
                     <input
@@ -111,18 +111,18 @@ export default function AccountSettingsPage() {
                         placeholder="••••••••"
                         minLength={6}
                         required
-                        className="w-full px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                        className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                     />
                 </div>
 
                 {passwordError && (
-                    <div className="p-3 bg-[#e67e80]/10 border border-[#e67e80]/30 rounded-lg text-[#e67e80] text-sm">
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
                         {passwordError}
                     </div>
                 )}
 
                 {passwordSuccess && (
-                    <div className="p-3 bg-[#8ccf7e]/10 border border-[#8ccf7e]/30 rounded-lg text-[#8ccf7e] text-sm flex items-center gap-2">
+                    <div className="p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg text-violet-400 text-sm flex items-center gap-2">
                         <Check className="w-4 h-4" />
                         Password updated successfully!
                     </div>
@@ -131,7 +131,7 @@ export default function AccountSettingsPage() {
                 <button
                     type="submit"
                     disabled={passwordLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#2d3437] text-[#dadada] rounded-lg hover:bg-[#3d4447] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50"
                 >
                     {passwordLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -142,13 +142,13 @@ export default function AccountSettingsPage() {
             </form>
 
             {/* Danger Zone */}
-            <div className="p-6 bg-[#1e2528] border border-[#e67e80]/30 rounded-xl space-y-4">
+            <div className="p-6 bg-zinc-900 border border-red-500/30 rounded-xl space-y-4">
                 <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-[#e67e80]" />
-                    <h2 className="text-lg font-semibold text-[#e67e80]">Danger Zone</h2>
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <h2 className="text-lg font-semibold text-red-400">Danger Zone</h2>
                 </div>
 
-                <p className="text-[#8a9899] text-sm">
+                <p className="text-zinc-500 text-sm">
                     Once you delete your account, there is no going back. All your data, including
                     datasets, training jobs, and notebooks will be permanently deleted.
                 </p>
@@ -156,14 +156,14 @@ export default function AccountSettingsPage() {
                 {!showDeleteConfirm ? (
                     <button
                         onClick={() => setShowDeleteConfirm(true)}
-                        className="flex items-center gap-2 px-4 py-2 border border-[#e67e80] text-[#e67e80] rounded-lg hover:bg-[#e67e80]/10 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
                     >
                         <Trash2 className="w-4 h-4" />
                         Delete Account
                     </button>
                 ) : (
-                    <div className="p-4 bg-[#e67e80]/5 border border-[#e67e80]/30 rounded-lg space-y-4">
-                        <p className="text-[#dadada] text-sm">
+                    <div className="p-4 bg-red-500/5 border border-red-500/30 rounded-lg space-y-4">
+                        <p className="text-white text-sm">
                             To confirm, type <strong>DELETE</strong> below:
                         </p>
                         <input
@@ -171,7 +171,7 @@ export default function AccountSettingsPage() {
                             value={deleteConfirmText}
                             onChange={(e) => setDeleteConfirmText(e.target.value)}
                             placeholder="DELETE"
-                            className="w-full px-4 py-2 bg-[#141b1e] border border-[#2d3437] rounded-lg text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#e67e80]"
+                            className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
                         />
                         <div className="flex gap-3">
                             <button
@@ -179,14 +179,14 @@ export default function AccountSettingsPage() {
                                     setShowDeleteConfirm(false)
                                     setDeleteConfirmText('')
                                 }}
-                                className="px-4 py-2 text-[#8a9899] hover:text-[#dadada] transition-colors"
+                                className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
                                 disabled={deleteConfirmText !== 'DELETE'}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#e67e80] text-white rounded-lg hover:bg-[#d56d6f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 Permanently Delete

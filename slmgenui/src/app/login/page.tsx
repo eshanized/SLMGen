@@ -1,7 +1,5 @@
 /**
- * Login Page.
- * 
- * Email/password login with magic link and OAuth options.
+ * Login Page - V3.0.0.
  * 
  * @author Eshan Roy <eshanized@proton.me>
  * @license MIT
@@ -28,18 +26,13 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [magicLinkSent, setMagicLinkSent] = useState(false)
-    const [showSlowMessage, setShowSlowMessage] = useState(false)
 
-    // Show slow loading message after 3 seconds
     useEffect(() => {
         if (isLoading) {
-            const timer = setTimeout(() => setShowSlowMessage(true), 3000)
-            return () => clearTimeout(timer)
-        } else if (showSlowMessage) {
-            const timer = setTimeout(() => setShowSlowMessage(false), 0)
+            const timer = setTimeout(() => {}, 3000)
             return () => clearTimeout(timer)
         }
-    }, [isLoading, showSlowMessage])
+    }, [isLoading])
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -82,16 +75,16 @@ function LoginForm() {
     if (magicLinkSent) {
         return (
             <div className="max-w-md w-full text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-[#8ccf7e]/20 flex items-center justify-center mb-6">
-                    <Mail className="w-8 h-8 text-[#8ccf7e]" />
+                <div className="w-16 h-16 mx-auto rounded-full bg-violet-500/20 flex items-center justify-center mb-6">
+                    <Mail className="w-8 h-8 text-violet-400" />
                 </div>
-                <h1 className="text-2xl font-bold text-[#dadada] mb-2">Check your email</h1>
-                <p className="text-[#8a9899] mb-6">
-                    We sent a magic link to <strong className="text-[#dadada]">{email}</strong>
+                <h1 className="text-2xl font-bold text-white mb-2">Check your email</h1>
+                <p className="text-zinc-400 mb-6">
+                    We sent a magic link to <strong className="text-white">{email}</strong>
                 </p>
                 <button
                     onClick={() => setMagicLinkSent(false)}
-                    className="text-[#8ccf7e] hover:underline"
+                    className="text-violet-400 hover:underline"
                 >
                     Use a different email
                 </button>
@@ -101,35 +94,31 @@ function LoginForm() {
 
     return (
         <div className="max-w-md w-full">
-            {/* Logo */}
-            <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#8ccf7e] to-[#6cbfbf] flex items-center justify-center">
-                    <Rocket className="w-5 h-5 text-[#141b1e]" />
+            <Link href="/" className="flex items-center justify-center gap-2.5 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                    <Rocket className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-2xl font-bold text-[#dadada] tracking-wide">SLMGEN</span>
+                <span className="text-2xl font-bold tracking-wide">SLMGEN</span>
             </Link>
 
-            {/* Card */}
-            <div className="bg-[#1e2528] border border-[#2d3437] rounded-2xl p-8">
-                <h1 className="text-2xl font-bold text-[#dadada] text-center mb-2">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+                <h1 className="text-2xl font-bold text-white text-center mb-2">
                     Welcome back
                 </h1>
-                <p className="text-[#8a9899] text-center mb-6">
-                    Sign in to continue to your dashboard
+                <p className="text-zinc-400 text-center mb-6">
+                    Sign in to continue
                 </p>
 
-                {/* Error */}
                 {error && (
-                    <div className="mb-6 p-3 bg-[#e57474]/10 border border-[#e57474]/50 rounded-lg text-[#e57474] text-sm">
+                    <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
                         {error}
                     </div>
                 )}
 
-                {/* OAuth Buttons */}
                 <div className="space-y-3 mb-6">
                     <button
                         onClick={() => handleOAuth('github')}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] font-medium hover:border-[#8ccf7e]/50 transition-all"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white font-medium hover:border-violet-500/50 transition-all"
                     >
                         <Github className="w-5 h-5" />
                         Continue with GitHub
@@ -137,48 +126,43 @@ function LoginForm() {
                 </div>
 
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="flex-1 h-px bg-[#2d3437]" />
-                    <span className="text-sm text-[#8a9899]">or</span>
-                    <div className="flex-1 h-px bg-[#2d3437]" />
+                    <div className="flex-1 h-px bg-zinc-800" />
+                    <span className="text-sm text-zinc-500">or</span>
+                    <div className="flex-1 h-px bg-zinc-800" />
                 </div>
 
-                {/* Email Form */}
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-[#dadada] mb-2">
-                            Email
-                        </label>
+                        <label className="block text-sm font-medium text-white mb-2">Email</label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
                                 required
-                                className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                             />
                         </div>
                     </div>
 
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm font-medium text-[#dadada]">
-                                Password
-                            </label>
-                            <Link href="/reset-password" className="text-sm text-[#8ccf7e] hover:underline">
+                            <label className="text-sm font-medium text-white">Password</label>
+                            <Link href="/reset-password" className="text-sm text-violet-400 hover:underline">
                                 Forgot?
                             </Link>
                         </div>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8a9899]" />
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 required
-                                className="w-full pl-10 pr-4 py-3 bg-[#141b1e] border border-[#2d3437] rounded-xl text-[#dadada] placeholder-[#8a9899] focus:outline-none focus:border-[#8ccf7e] transition-colors"
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
                             />
                         </div>
                     </div>
@@ -186,7 +170,7 @@ function LoginForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#8ccf7e] to-[#6cbfbf] text-[#141b1e] font-semibold rounded-xl hover:shadow-lg hover:shadow-[#8ccf7e]/30 transition-all disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-violet-600/20 transition-all disabled:opacity-50"
                     >
                         {isLoading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -197,30 +181,20 @@ function LoginForm() {
                             </>
                         )}
                     </button>
-
-                    {/* Slow loading message */}
-                    {showSlowMessage && (
-                        <p className="flex items-center justify-center gap-2 text-center text-sm text-[#e5c76b] animate-pulse">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Server is warming up... This can take up to 30 seconds on first visit.
-                        </p>
-                    )}
                 </form>
 
-                {/* Magic Link */}
                 <button
                     onClick={handleMagicLink}
                     disabled={isLoading}
-                    className="w-full mt-4 text-center text-sm text-[#8a9899] hover:text-[#dadada] transition-colors"
+                    className="w-full mt-4 text-center text-sm text-zinc-400 hover:text-white transition-colors"
                 >
                     Or sign in with magic link
                 </button>
             </div>
 
-            {/* Sign up link */}
-            <p className="text-center mt-6 text-[#8a9899]">
+            <p className="text-center mt-6 text-zinc-400">
                 Don&apos;t have an account?{' '}
-                <Link href="/signup" className="text-[#8ccf7e] hover:underline">
+                <Link href="/signup" className="text-violet-400 hover:underline">
                     Sign up
                 </Link>
             </p>
@@ -231,14 +205,14 @@ function LoginForm() {
 function LoginFallback() {
     return (
         <div className="max-w-md w-full flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-[#8ccf7e]" />
+            <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
         </div>
     )
 }
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen bg-[#141b1e] flex items-center justify-center px-4">
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
             <Suspense fallback={<LoginFallback />}>
                 <LoginForm />
             </Suspense>
