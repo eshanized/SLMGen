@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { AlertTriangle, ChevronRight, Lightbulb } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface FailureCase {
     category: string
@@ -24,8 +25,6 @@ interface FailureCase {
 interface FailurePreviewProps {
     sessionId: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export function FailurePreview({ sessionId }: FailurePreviewProps) {
     const [cases, setCases] = useState<FailureCase[]>([])

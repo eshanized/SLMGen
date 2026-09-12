@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Behavior Composer.
 
@@ -92,19 +91,19 @@ def _get_creativity_phrase(creativity: int) -> str:
 def compose_behavior(config: BehaviorConfig) -> ComposedBehavior:
     """
     Generate a system prompt from trait sliders.
-    
+
     Each slider (0-100) controls a different aspect of behavior.
     The result is a coherent system prompt that reflects the user's preferences.
     """
     logger.info(f"Composing behavior: tone={config.tone}, depth={config.depth}, "
                 f"risk={config.risk_tolerance}, creativity={config.creativity}")
-    
+
     # Get phrase for each trait
     tone_phrase = _get_tone_phrase(config.tone)
     depth_phrase = _get_depth_phrase(config.depth)
     risk_phrase = _get_risk_phrase(config.risk_tolerance)
     creativity_phrase = _get_creativity_phrase(config.creativity)
-    
+
     # Compose the system prompt
     prompt_parts = [
         "You are a helpful AI assistant.",
@@ -117,26 +116,26 @@ def compose_behavior(config: BehaviorConfig) -> ComposedBehavior:
         "",
         f"**Creativity:** {creativity_phrase}.",
     ]
-    
+
     system_prompt = "\n".join(prompt_parts)
-    
+
     # Generate traits summary
     tone_label = "casual" if config.tone < 40 else "formal" if config.tone > 60 else "balanced"
     depth_label = "concise" if config.depth < 40 else "thorough" if config.depth > 60 else "moderate"
     risk_label = "safe" if config.risk_tolerance < 40 else "bold" if config.risk_tolerance > 60 else "balanced"
     creativity_label = "factual" if config.creativity < 40 else "creative" if config.creativity > 60 else "balanced"
-    
+
     traits_summary = f"{tone_label}, {depth_label}, {risk_label}, {creativity_label}"
-    
+
     # Generate explanation
     explanation = (
         f"This system prompt creates an assistant that's {tone_label} in tone, "
         f"gives {depth_label} responses, takes a {risk_label} approach to uncertainty, "
         f"and is {creativity_label} in its explanations."
     )
-    
+
     logger.info(f"Composed behavior: {traits_summary}")
-    
+
     return ComposedBehavior(
         system_prompt=system_prompt,
         explanation=explanation,

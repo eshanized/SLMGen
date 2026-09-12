@@ -12,6 +12,7 @@
 
 import { useState, useCallback } from 'react'
 import { Settings, Copy, Check } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface BehaviorConfig {
     tone: number
@@ -25,8 +26,6 @@ interface ComposedBehavior {
     explanation: string
     traits_summary: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const SLIDERS = [
     { key: 'tone', label: 'Tone', leftLabel: 'Casual', rightLabel: 'Formal' },

@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { AlertTriangle, Check, Info, Lightbulb } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface RiskData {
     score: number
@@ -23,8 +24,6 @@ interface RiskData {
 interface RiskMeterProps {
     sessionId: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export function RiskMeter({ sessionId }: RiskMeterProps) {
     const [risk, setRisk] = useState<RiskData | null>(null)

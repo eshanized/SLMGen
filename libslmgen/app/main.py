@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SLMGEN FastAPI Application.
 
@@ -12,21 +11,35 @@ Handles CORS, routing, rate limiting, and lifecycle events.
 
 # Load environment variables first (before any other imports)
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import logging  # noqa: E402
-from contextlib import asynccontextmanager  # noqa: E402
-from fastapi import FastAPI, Response  # noqa: E402
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-from fastapi.responses import JSONResponse  # noqa: E402
-from slowapi.errors import RateLimitExceeded  # noqa: E402
+import logging
+from contextlib import asynccontextmanager
 
-from app.config import settings  # noqa: E402
-from app.session_store import session_store  # noqa: E402
-from app.storage import storage_service, serve_local_file  # noqa: E402
-from app.training_store import training_store  # noqa: E402
-from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler  # noqa: E402
-from app.routers import upload, analyze, recommend, generate, jobs, preview, advanced, training, convert, export, presets  # noqa: E402
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+
+from app.config import settings
+from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from app.routers import (
+    advanced,
+    analyze,
+    convert,
+    export,
+    generate,
+    jobs,
+    presets,
+    preview,
+    recommend,
+    training,
+    upload,
+)
+from app.session_store import session_store
+from app.storage import serve_local_file, storage_service
+from app.training_store import training_store
 
 # Setup Logging
 logging.basicConfig(
@@ -44,17 +57,17 @@ async def lifespan(app: FastAPI):
     logger.info(f"📁 Upload directory: {settings.upload_dir}")
     logger.info(f"🌐 Allowed origins: {settings.allowed_origins}")
     logger.info(f"🔒 Rate limit: {settings.rate_limit_per_minute}/min, Upload: {settings.upload_rate_limit_per_minute}/min")
-    
+
     # Initialize in-memory session store
     session_store.start()
     logger.info(f"🗄️ In-memory session store started (TTL: {settings.session_ttl_seconds}s)")
-    
+
     # Initialize training store
     training_store.start()
     logger.info("📊 Training store started")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("👋 SLMGEN Backend shutting down...")
     session_store.stop()
@@ -65,7 +78,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SLMGEN API",
     description="Generate fine-tuning notebooks for Small Language Models",
-    version="1.0.0",
+    version=settings.app_version,
     lifespan=lifespan,
 )
 
@@ -100,7 +113,7 @@ app.include_router(advanced.router, tags=["Advanced Features"])
 app.include_router(training.router)
 app.include_router(convert.router, tags=["Converter"])
 app.include_router(export.router, tags=["Export"])
-# Presets uses its own prefix
+app.include_router(presets.router)
 
 
 @app.get("/")
@@ -131,7 +144,7 @@ async def get_local_file(path: str):
         try:
             content, content_type = await serve_local_file(path)
             return Response(content=content, media_type=content_type)
-        except Exception as e:
+        except Exception:
             return JSONResponse(
                 status_code=404,
                 content={"detail": "File not found."},

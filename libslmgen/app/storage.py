@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Simple Local Storage Service.
 
@@ -15,7 +14,6 @@ Copyright (c) 2026 Eshan Roy
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 
 from fastapi import HTTPException
 
@@ -39,7 +37,7 @@ def _validate_path(path: str) -> None:
 class SimpleStorageService:
     """
     Simple local file storage.
-    
+
     Stores uploaded files in local filesystem.
     For production with multiple instances, consider Supabase Storage.
     """
@@ -57,8 +55,8 @@ class SimpleStorageService:
         self,
         file_bytes: bytes,
         session_id: str,
-        user_id: Optional[str] = None,
-        original_filename: Optional[str] = None,
+        user_id: str | None = None,
+        original_filename: str | None = None,
     ) -> str:
         """Upload dataset file."""
         if len(file_bytes) > settings.max_upload_bytes:
@@ -66,18 +64,18 @@ class SimpleStorageService:
                 status_code=413,
                 detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024*1024)}MB",
             )
-        
+
         # Build path: datasets/{session_id}.jsonl
         storage_path = f"datasets/{session_id}.jsonl"
         _validate_path(storage_path)
-        
+
         # Ensure directory exists
         local_path = self._storage_dir / storage_path
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Write file
         local_path.write_bytes(file_bytes)
-        
+
         logger.info(f"Uploaded dataset: {storage_path}")
         return storage_path
 
@@ -85,39 +83,39 @@ class SimpleStorageService:
         self,
         file_bytes: bytes,
         session_id: str,
-        user_id: Optional[str] = None,
-        original_filename: Optional[str] = None,
+        user_id: str | None = None,
+        original_filename: str | None = None,
     ) -> str:
         """Upload notebook file."""
         filename = original_filename or f"{session_id}.ipynb"
         storage_path = f"notebooks/{filename}"
         _validate_path(storage_path)
-        
+
         local_path = self._storage_dir / storage_path
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         local_path.write_bytes(file_bytes)
-        
+
         logger.info(f"Uploaded notebook: {storage_path}")
         return storage_path
 
     async def get_signed_url(self, storage_path: str, expires_in: int = 3600) -> str:
         """Get file URL (returns local path)."""
         _validate_path(storage_path)
-        
+
         local_path = self._storage_dir / storage_path
         if not local_path.exists():
             raise HTTPException(
                 status_code=404,
                 detail="File not found.",
             )
-        
+
         return f"/storage/local/{storage_path}"
 
     async def delete_file(self, storage_path: str) -> None:
         """Delete a file."""
         _validate_path(storage_path)
-        
+
         local_path = self._storage_dir / storage_path
         if local_path.exists():
             local_path.unlink()
@@ -126,20 +124,20 @@ class SimpleStorageService:
     async def download_file(self, storage_path: str) -> bytes:
         """Download file content."""
         _validate_path(storage_path)
-        
+
         local_path = self._storage_dir / storage_path
         if not local_path.exists():
             raise HTTPException(
                 status_code=404,
                 detail="File not found.",
             )
-        
+
         return local_path.read_bytes()
 
     async def file_exists(self, storage_path: str) -> bool:
         """Check if file exists."""
         _validate_path(storage_path)
-        
+
         local_path = self._storage_dir / storage_path
         return local_path.exists()
 
@@ -147,13 +145,13 @@ class SimpleStorageService:
 async def serve_local_file(storage_path: str) -> tuple[bytes, str]:
     """Serve a file from local storage."""
     _validate_path(storage_path)
-    
+
     storage = SimpleStorageService()
     local_path = storage._storage_dir / storage_path
-    
+
     if not local_path.exists():
         raise HTTPException(status_code=404, detail="File not found.")
-    
+
     ext = local_path.suffix.lower()
     if ext == ".jsonl":
         content_type = "application/jsonl"
@@ -161,7 +159,7 @@ async def serve_local_file(storage_path: str) -> tuple[bytes, str]:
         content_type = "application/json"
     else:
         content_type = "application/octet-stream"
-    
+
     return local_path.read_bytes(), content_type
 
 

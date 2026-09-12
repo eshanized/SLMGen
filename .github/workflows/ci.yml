@@ -34,6 +34,9 @@ jobs:
         # Default ruff checks
         ruff check .
 
+    - name: Run Pytest
+      run: pytest tests/
+
   frontend-checks:
     runs-on: ubuntu-latest
     defaults:

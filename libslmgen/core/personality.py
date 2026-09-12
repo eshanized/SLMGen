@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Dataset Personality Detection.
 
@@ -10,10 +9,10 @@ what kind of assistant their data will produce.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
-import re
 import logging
-from dataclasses import dataclass
+import re
 from collections import Counter
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -69,24 +68,24 @@ def _analyze_tone(responses: list[str]) -> tuple[str, float]:
     """
     all_text = " ".join(responses).lower()
     words = set(re.findall(r"\b\w+\b", all_text))
-    
+
     formal_count = len(words & FORMAL_MARKERS)
     casual_count = len(words & CASUAL_MARKERS)
-    
+
     # Also check sentence structure
     # Formal text tends to have longer sentences
     sentences = re.split(r"[.!?]+", all_text)
     avg_sentence_len = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
-    
+
     # Scoring
     formal_score = formal_count * 2 + (1 if avg_sentence_len > 15 else 0)
     casual_score = casual_count * 2 + (1 if avg_sentence_len < 10 else 0)
-    
+
     if formal_score > casual_score + 2:
         return "formal", min(0.9, 0.5 + formal_score * 0.1)
     elif casual_score > formal_score + 2:
         return "casual", min(0.9, 0.5 + casual_score * 0.1)
-    
+
     return "neutral", 0.6
 
 
@@ -97,10 +96,10 @@ def _analyze_verbosity(responses: list[str]) -> tuple[str, float]:
     """
     if not responses:
         return "moderate", 0.3
-    
+
     lengths = [len(r) for r in responses]
     avg_len = sum(lengths) / len(lengths)
-    
+
     # Thresholds based on character count
     if avg_len < 150:
         return "concise", 0.8
@@ -117,18 +116,18 @@ def _analyze_technicality(responses: list[str]) -> tuple[str, float]:
     """
     all_text = " ".join(responses).lower()
     total_words = len(re.findall(r"\b\w+\b", all_text))
-    
+
     if total_words == 0:
         return "layman", 0.3
-    
+
     # Count technical terms
     tech_count = 0
     for pattern in TECHNICAL_PATTERNS:
         tech_count += len(re.findall(pattern, all_text, re.IGNORECASE))
-    
+
     # Calculate density
     tech_density = tech_count / (total_words / 100)  # per 100 words
-    
+
     if tech_density > 3:
         return "expert", 0.85
     elif tech_density > 1:
@@ -144,15 +143,15 @@ def _analyze_strictness(responses: list[str]) -> tuple[str, float]:
     """
     if len(responses) < 10:
         return "moderate", 0.4  # not enough data
-    
+
     lengths = [len(r) for r in responses]
     avg_len = sum(lengths) / len(lengths)
-    
+
     # Calculate variance
     variance = sum((length - avg_len) ** 2 for length in lengths) / len(lengths)
     std_dev = variance ** 0.5
     coef_of_var = std_dev / avg_len if avg_len > 0 else 0
-    
+
     # Also check for templated responses (indicates strictness)
     # Look for common prefixes
     if len(responses) > 20:
@@ -161,7 +160,7 @@ def _analyze_strictness(responses: list[str]) -> tuple[str, float]:
         most_common = prefix_counts.most_common(1)
         if most_common and most_common[0][1] > len(responses) * 0.1:
             return "strict", 0.8  # many similar openings
-    
+
     if coef_of_var < 0.3:
         return "strict", 0.75
     elif coef_of_var < 0.6:
@@ -188,35 +187,35 @@ def _generate_summary(
         ("neutral", "intermediate"): "a helpful all-rounder",
         ("neutral", "layman"): "a straightforward helper",
     }
-    
+
     base = templates.get((tone, technicality), "a capable assistant")
-    
+
     # Add verbosity note
     if verbosity == "concise":
         base += " who gets straight to the point"
     elif verbosity == "verbose":
         base += " who provides thorough explanations"
-    
+
     # Add strictness note
     if strictness == "strict":
         base += " with consistent, predictable responses"
     elif strictness == "flexible":
         base += " who adapts to different questions"
-    
+
     return f"Your dataset behaves like {base}."
 
 
 def detect_personality(data: list[dict]) -> DatasetPersonality:
     """
     Analyze dataset and infer behavioral personality.
-    
+
     This helps users understand what kind of assistant they're training,
     before they even start the training process.
     """
     logger.info(f"Detecting personality from {len(data)} examples")
-    
+
     responses = _collect_responses(data)
-    
+
     if len(responses) < 20:
         # Not enough data for reliable analysis
         logger.warning("Too few responses for reliable personality detection")
@@ -229,22 +228,22 @@ def detect_personality(data: list[dict]) -> DatasetPersonality:
             summary="Not enough data for reliable personality analysis. "
                     "Consider adding more examples for a better assessment."
         )
-    
+
     # Run all analyses
     tone, tone_conf = _analyze_tone(responses)
     verbosity, verb_conf = _analyze_verbosity(responses)
     technicality, tech_conf = _analyze_technicality(responses)
     strictness, strict_conf = _analyze_strictness(responses)
-    
+
     # Overall confidence is the average
     overall_conf = (tone_conf + verb_conf + tech_conf + strict_conf) / 4
-    
+
     # Generate summary
     summary = _generate_summary(tone, verbosity, technicality, strictness)
-    
+
     logger.info(f"Personality detected: {tone}/{verbosity}/{technicality}/{strictness} "
                 f"(confidence: {overall_conf:.2f})")
-    
+
     return DatasetPersonality(
         tone=tone,
         verbosity=verbosity,

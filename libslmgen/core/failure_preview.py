@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Synthetic Failure Preview.
 
@@ -37,36 +36,36 @@ def _collect_patterns(data: list[dict]) -> dict:
         "has_code": False,
         "avg_response_len": 0,
     }
-    
+
     all_responses = []
-    
+
     for entry in data[:200]:  # sample for efficiency
         for msg in entry.get("messages", []):
             content = msg.get("content", "")
             role = msg.get("role")
-            
+
             if role == "user":
                 patterns["user_lengths"].append(len(content))
                 # Extract first few words as topic hint
                 words = content.split()[:5]
                 patterns["topics"].append(" ".join(words))
-                
+
             elif role == "assistant":
                 all_responses.append(content)
                 patterns["response_lengths"].append(len(content))
-                
+
                 # Check for refusal patterns
                 refusal_words = ["i can't", "i cannot", "i'm unable", "i won't"]
                 if any(r in content.lower() for r in refusal_words):
                     patterns["has_refusals"] = True
-                
+
                 # Check for code
                 if "```" in content or "def " in content or "function" in content:
                     patterns["has_code"] = True
-    
+
     if all_responses:
         patterns["avg_response_len"] = sum(len(r) for r in all_responses) // len(all_responses)
-    
+
     return patterns
 
 
@@ -75,7 +74,7 @@ def _generate_hallucination_case(patterns: dict, topic_index: int) -> FailureCas
     topics = patterns.get("topics", ["the topic"])
     # FIX: A3 - Use deterministic index instead of random.choice
     sample_topic = topics[topic_index % len(topics)] if topics else "this subject"
-    
+
     return FailureCase(
         category="hallucination",
         user_prompt=f"Tell me the exact statistics about {sample_topic}",
@@ -133,7 +132,7 @@ def _generate_offtopic_case(patterns: dict, topic_index: int) -> FailureCase:
     topics = patterns.get("topics", ["the topic"])
     # FIX: A3 - Use deterministic index instead of random.choice
     sample_topic = topics[(topic_index + 1) % len(topics)] if topics else "this"
-    
+
     return FailureCase(
         category="off-topic",
         user_prompt=f"How does {sample_topic} work in practice?",
@@ -153,12 +152,12 @@ def _generate_offtopic_case(patterns: dict, topic_index: int) -> FailureCase:
 def generate_failure_previews(data: list[dict], max_cases: int = 3) -> list[FailureCase]:
     """
     Generate synthetic failure cases based on dataset patterns.
-    
+
     Shows users what might go wrong before they train,
     so they can improve their dataset or set expectations.
     """
     logger.info(f"Generating failure previews for {len(data)} examples")
-    
+
     if len(data) < 20:
         return [FailureCase(
             category="insufficient_data",
@@ -167,31 +166,31 @@ def generate_failure_previews(data: list[dict], max_cases: int = 3) -> list[Fail
             why_it_fails="With fewer than 20 examples, the model has too little to learn from.",
             likelihood="high"
         )]
-    
+
     patterns = _collect_patterns(data)
-    
+
     # FIX: A3 - Use deterministic topic selection based on dataset content hash
     # This ensures same dataset always produces identical failure previews
     content_hash = hashlib.md5(str(len(data)).encode() + str(patterns.get("avg_response_len", 0)).encode()).hexdigest()
     topic_index = int(content_hash[:8], 16)  # Stable index from hash
-    
+
     # Generate potential failures
     all_cases = [
         _generate_hallucination_case(patterns, topic_index),
         _generate_inconsistency_case(patterns),
     ]
-    
+
     if patterns.get("has_refusals"):
         all_cases.append(_generate_refusal_case(patterns))
     else:
         all_cases.append(_generate_offtopic_case(patterns, topic_index))
-    
+
     # Sort by likelihood and return top N
     likelihood_order = {"high": 0, "medium": 1, "low": 2}
     all_cases.sort(key=lambda c: likelihood_order.get(c.likelihood, 1))
-    
+
     result = all_cases[:max_cases]
-    
+
     logger.info(f"Generated {len(result)} failure preview cases")
-    
+
     return result

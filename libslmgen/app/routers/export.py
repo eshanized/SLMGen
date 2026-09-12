@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Export Router.
 
 Provides export instructions for various deployment formats.
 """
 import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from core.export import (
+    generate_ollama_modelfile,
     get_export_instructions,
     list_export_formats,
-    generate_ollama_modelfile,
-    generate_gguf_template,
-    generate_vllm_template,
-    generate_huggingface_push,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +49,7 @@ class FormatListResponse(BaseModel):
 async def generate_export(request: ExportRequest):
     """
     Generate export instructions.
-    
+
     Supported formats:
     - ollama: Generate Modelfile for Ollama
     - gguf: Generate GGUF conversion instructions
@@ -65,13 +62,13 @@ async def generate_export(request: ExportRequest):
             model_id=request.model_id,
             system_prompt=request.system_prompt,
         )
-        
+
         return ExportResponse(
             format=request.format,
             instructions=instructions,
             model_id=request.model_id,
         )
-    
+
     except Exception as e:
         logger.error(f"Export generation error: {e}")
         raise HTTPException(status_code=500, detail="Export generation failed")
@@ -85,13 +82,13 @@ async def generate_modelfile(request: ExportRequest):
             model_id=request.model_id,
             system_prompt=request.system_prompt or "You are a helpful AI assistant.",
         )
-        
+
         return ExportResponse(
             format="ollama",
             instructions=modelfile,
             model_id=request.model_id,
         )
-    
+
     except Exception as e:
         logger.error(f"Modelfile generation error: {e}")
         raise HTTPException(status_code=500, detail="Modelfile generation failed")
@@ -101,7 +98,7 @@ async def generate_modelfile(request: ExportRequest):
 async def list_formats():
     """List all available export formats."""
     formats = list_export_formats()
-    
+
     return FormatListResponse(
         formats=[
             ExportFormatInfo(key=key, name=info["name"], description=info["description"])

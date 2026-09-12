@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Model Recommendation Engine.
 
@@ -14,12 +13,12 @@ import logging
 from dataclasses import dataclass
 
 from app.models import (
-    TaskType,
-    DeploymentTarget,
-    DatasetStats,
     DatasetCharacteristics,
+    DatasetStats,
+    DeploymentTarget,
     ModelRecommendation,
     RecommendationResponse,
+    TaskType,
 )
 
 logger = logging.getLogger(__name__)
@@ -275,53 +274,53 @@ def _score_deployment_fit(model: ModelSpec, deploy: DeploymentTarget) -> int:
     """Score model's fit for deployment Target (0-30 points)."""
     if deploy in model.good_for_deploy:
         return 30
-    
+
     # Smaller models get partial credit for edge/mobile
     if deploy in [DeploymentTarget.EDGE, DeploymentTarget.MOBILE, DeploymentTarget.BROWSER]:
         if model.size in ["2B", "3B", "3.8B"]:
             return 20
         return 5  # big models not great for Edge
-    
+
     return 15  # neutral
 
 
 def _score_data_fit(model: ModelSpec, stats: DatasetStats, chars: DatasetCharacteristics) -> int:
     """Score based on dataset characteristics (0-20 points)."""
     score = 10  # baseline
-    
+
     # Multilingual data → Qwen preferred (including Qwen 3)
     if chars.is_multilingual and model.key in ["qwen25", "qwen3"]:
         score += 10
-    
+
     # JSON output → Qwen or Phi
     if chars.looks_like_json and model.key in ["qwen25", "qwen3", "phi4"]:
         score += 5
-    
+
     # Multi-turn → Llama or conversation-focused
     if chars.is_multi_turn and TaskType.CONVERSATION in model.good_for_tasks:
         score += 5
-    
+
     # Dataset size vs model minimum
     if stats.total_examples >= model.min_examples * 2:
         score += 5
     elif stats.total_examples < model.min_examples:
         score -= 5
-    
+
     return max(0, min(20, score))
 
 
 def _apply_bonuses(model: ModelSpec, stats: DatasetStats, chars: DatasetCharacteristics) -> int:
     """Apply bonus points for special Cases."""
     bonus = 0
-    
+
     # Multi-turn Bonus
     if chars.is_multi_turn:
         bonus += 10
-    
+
     # Long context utilization
     if stats.avg_tokens_per_example > 2000 and model.context_window >= 16384:
         bonus += 5
-    
+
     return bonus
 
 
@@ -333,31 +332,31 @@ def _get_reasons(
 ) -> list[str]:
     """Generate human-readable reasons for Recommendation."""
     reasons = []
-    
+
     # Task fit Reason
     if task in model.good_for_tasks:
         reasons.append(f"✅ Excellent for {task.value} tasks")
-    
+
     # Deployment reason
     if deploy in model.good_for_deploy:
         reasons.append(f"✅ Great for {deploy.value} deployment")
-    
+
     # Special Strengths (V2.0.0)
     if chars.is_multilingual and model.key in ["qwen25", "qwen3"]:
         reasons.append("✅ Best choice for multilingual data")
-    
+
     if chars.looks_like_json and model.key in ["qwen25", "qwen3", "phi4"]:
         reasons.append("✅ Excels at structured JSON output")
-    
+
     if deploy in [DeploymentTarget.EDGE, DeploymentTarget.MOBILE]:
         if model.size == "2B":
             reasons.append("✅ Compact size perfect for edge devices")
-    
+
     # Add general Strengths
     for strength in model.strengths[:2]:
         if strength not in str(reasons):
             reasons.append(f"💪 {strength}")
-    
+
     return reasons[:4]  # max 4 Reasons
 
 
@@ -369,7 +368,7 @@ def get_recommendations(
 ) -> RecommendationResponse:
     """
     Get model recommendations based on task, deployment, and data.
-    
+
     Scoring breakdown (100 points Max):
     - Task fit: 50 pts
     - Deployment fit: 30 pts
@@ -377,23 +376,23 @@ def get_recommendations(
     - Bonuses: +10 pts possible
     """
     logger.info(f"Getting recommendations for task={task.value}, deploy={deployment.value}")
-    
+
     scores: list[tuple[str, int, ModelSpec]] = []
-    
+
     for key, model in MODELS.items():
         # Calculate Scores
         task_score = _score_task_fit(model, task)
         deploy_score = _score_deployment_fit(model, deployment)
         data_score = _score_data_fit(model, stats, characteristics)
         bonus = _apply_bonuses(model, stats, characteristics)
-        
+
         total = task_score + deploy_score + data_score + bonus
         total = min(100, total)  # cap at 100
-        
+
         scores.append((key, total, model))
         logger.debug(f"  {key}: task={task_score}, deploy={deploy_score}, "
                      f"data={data_score}, bonus={bonus}, total={total}")
-    
+
     # Hard overrides for special Cases
     # Multilingual data → Qwen always wins
     if characteristics.is_multilingual:
@@ -401,17 +400,22 @@ def get_recommendations(
             if key == "qwen25":
                 scores[i] = (key, min(100, score + 20), model)
                 logger.info("Applied multilingual override for Qwen")
-    
+
     # Edge deployment → Gemma preferred
     if deployment in [DeploymentTarget.EDGE, DeploymentTarget.MOBILE, DeploymentTarget.BROWSER]:
         for i, (key, score, model) in enumerate(scores):
             if key == "gemma2":
                 scores[i] = (key, min(100, score + 15), model)
                 logger.info("Applied edge override for Gemma")
-    
+
     # Sort by Score descending
     scores.sort(key=lambda x: x[1], reverse=True)
-    
+
+    def _get_gpu_requirement(size: str) -> str:
+        if size in {"14B", "24B", "32B", "70B", "84B"}:
+            return "A100 (Colab Pro)"
+        return "T4 (Free)"
+
     # Build Response
     recommendations = []
     for key, score, model in scores:
@@ -423,14 +427,15 @@ def get_recommendations(
             reasons=_get_reasons(model, task, deployment, characteristics),
             context_window=model.context_window,
             is_gated=model.is_gated,
+            gpu_requirement=_get_gpu_requirement(model.size),
         )
         recommendations.append(rec)
-    
+
     primary = recommendations[0]
     alternatives = recommendations[1:4]  # top 3 alternatives
-    
+
     logger.info(f"Recommending {primary.model_name} with score {primary.score}")
-    
+
     return RecommendationResponse(
         primary=primary,
         alternatives=alternatives,

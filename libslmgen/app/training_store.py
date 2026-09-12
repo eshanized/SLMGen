@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Simple In-Memory Training Store.
 
@@ -13,12 +12,8 @@ Copyright (c) 2026 Eshan Roy
 
 import logging
 import re
-import time
-import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from collections.abc import AsyncGenerator
 from threading import Thread
-from typing import Any, AsyncGenerator, Optional
 
 from fastapi import HTTPException
 
@@ -47,12 +42,12 @@ def _validate_session_id(session_id: str) -> None:
 class SimpleTrainingStore:
     """
     Simple in-memory training store.
-    
+
     Uses core/training_tracker.py internally.
     """
-    
+
     def __init__(self):
-        self._cleanup_thread: Optional[Thread] = None
+        self._cleanup_thread: Thread | None = None
         self._running = True
 
     def start(self) -> None:
@@ -68,14 +63,14 @@ class SimpleTrainingStore:
     async def start_session(self, session_id: str, metadata: dict) -> None:
         """Start a new training session."""
         _validate_session_id(session_id)
-        
+
         # Check if already exists
         if training_tracker.has_session(session_id):
             raise HTTPException(
                 status_code=409,
                 detail="Training session already exists.",
             )
-        
+
         training_tracker.create_session(
             session_id=session_id,
             job_id=metadata.get("job_id", ""),
@@ -83,19 +78,19 @@ class SimpleTrainingStore:
             total_steps=metadata.get("total_steps", 0),
             total_epochs=metadata.get("total_epochs", 1),
         )
-        
+
         logger.info(f"Started training session: {session_id}")
 
     async def add_event(self, session_id: str, event: dict) -> str:
         """Add a training event."""
         _validate_session_id(session_id)
-        
+
         if not training_tracker.has_session(session_id):
             raise HTTPException(
                 status_code=404,
                 detail="Training session not found.",
             )
-        
+
         # Get session to access total_steps
         session = training_tracker.get_session(session_id)
         if not session:
@@ -103,7 +98,7 @@ class SimpleTrainingStore:
                 status_code=404,
                 detail="Training session not found.",
             )
-        
+
         # Create event
         training_event = TrainingEvent(
             step=event.get("step", 0),
@@ -114,71 +109,71 @@ class SimpleTrainingStore:
             tokens_per_second=event.get("tokens_per_second"),
             gpu_memory_used=event.get("gpu_memory_used"),
         )
-        
+
         training_tracker.add_event(session_id, training_event)
-        
+
         # Return event ID (string)
         return f"{event.get('step', 0)}"
 
-    async def complete_session(self, session_id: str, error: Optional[str] = None) -> None:
+    async def complete_session(self, session_id: str, error: str | None = None) -> None:
         """Mark training as completed or failed."""
         _validate_session_id(session_id)
-        
+
         if not training_tracker.has_session(session_id):
             raise HTTPException(
                 status_code=404,
                 detail="Training session not found.",
             )
-        
+
         if error:
             training_tracker.fail_session(session_id, error)
         else:
             training_tracker.complete_session(session_id)
 
-    async def get_state(self, session_id: str) -> Optional[dict]:
+    async def get_state(self, session_id: str) -> dict | None:
         """Get current state."""
         _validate_session_id(session_id)
-        
+
         session = training_tracker.get_session(session_id)
         if session is None:
             return None
-        
+
         return self._session_to_state(session)
 
-    async def get_events(self, session_id: str, limit: int = 100, after_id: Optional[str] = None) -> list[dict]:
+    async def get_events(self, session_id: str, limit: int = 100, after_id: str | None = None) -> list[dict]:
         """Get events from session."""
         _validate_session_id(session_id)
-        
+
         session = training_tracker.get_session(session_id)
         if session is None:
             return []
-        
+
         events = []
         for event in session.events[-limit:]:
             events.append(event.to_dict())
-        
+
         return events
 
-    async def get_latest(self, session_id: str) -> Optional[dict]:
+    async def get_latest(self, session_id: str) -> dict | None:
         """Get most recent event."""
         _validate_session_id(session_id)
-        
+
         session = training_tracker.get_session(session_id)
         if session is None or not session.events:
             return None
-        
+
         return session.events[-1].to_dict()
 
-    async def stream_events(self, session_id: str, last_id: Optional[str] = None) -> AsyncGenerator[dict, None]:
+    async def stream_events(self, session_id: str, last_id: str | None = None) -> AsyncGenerator[dict, None]:
         """Stream events (simple generator)."""
         _validate_session_id(session_id)
-        
+
         if not training_tracker.has_session(session_id):
             raise HTTPException(
                 status_code=404,
                 detail="Training session not found.",
             )
-        
+
         # Get initial state
         session = training_tracker.get_session(session_id)
         if session is None:
@@ -186,24 +181,24 @@ class SimpleTrainingStore:
                 status_code=404,
                 detail="Training session not found.",
             )
-        
+
         # Yield current state
         yield {
             "type": "state",
             "data": self._session_to_state(session),
         }
-        
+
         # Stream events with simple polling
         import asyncio
         last_step = -1
-        
+
         while True:
             await asyncio.sleep(2)
-            
+
             session = training_tracker.get_session(session_id)
             if session is None:
                 break
-            
+
             # Check for new events
             if session.events and session.events[-1].step > last_step:
                 for event in session.events:
@@ -219,7 +214,7 @@ class SimpleTrainingStore:
                             "epoch": event.epoch,
                             "learning_rate": event.learning_rate,
                         }
-            
+
             # Check if complete
             if session.status in (TrainingStatus.COMPLETED, TrainingStatus.FAILED):
                 yield {
@@ -249,16 +244,15 @@ class SimpleTrainingStore:
         total_steps = session.total_steps
         current_step = session.events[-1].step if session.events else 0
         progress = (current_step / total_steps * 100) if total_steps > 0 else 0.0
-        
+
         # Estimate ETA
         eta_seconds = None
         eta_formatted = None
         if session.events and session.status == TrainingStatus.RUNNING:
             # Simple ETA based on last event
-            import threading
             # This is a simplified ETA
             pass
-        
+
         return {
             "session_id": session.session_id,
             "job_id": session.job_id,

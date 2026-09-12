@@ -1,4 +1,4 @@
-# SLMGEN V2.0.0 Backend Dependencies
+# SLMGEN V3.0.0 Backend Dependencies
 # Author: Eshan Roy <eshanized@proton.me>
 
 # Core Framework

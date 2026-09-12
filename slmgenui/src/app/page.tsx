@@ -12,14 +12,11 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Navbar, Footer } from '@/components/navigation';
 import {
   Rocket,
   ArrowRight,
-  Upload,
-  Settings,
-  Target,
   Zap,
   Sparkles,
   FileText,
@@ -27,11 +24,6 @@ import {
   Download,
   Wand2,
   Brain,
-  Cpu,
-  Layers,
-  Terminal,
-  Cloud,
-  Server,
   Check,
   ChevronRight,
 } from '@/components/icons';
@@ -244,7 +236,7 @@ export default function HomePage() {
                   <div><span className="text-purple-400">import</span> <span className="text-yellow-300">torch</span></div>
                   <div className="h-4" />
                   <div><span className="text-blue-400">model</span>, <span className="text-blue-400">tokenizer</span> = FastChatModel.from_pretrained(</div>
-                  <div className="pl-4"><span className="text-green-300">"Qwen/Qwen2.5-3B-Instruct"</span>,</div>
+                  <div className="pl-4"><span className="text-green-300">&quot;Qwen/Qwen2.5-3B-Instruct&quot;</span>,</div>
                   <div className="pl-4">max_seq_length=<span className="text-orange-400">2048</span>,</div>
                   <div className="pl-4">load_in_4bit=<span className="text-blue-400">True</span></div>
                   <div>)</div>
@@ -309,7 +301,7 @@ export default function HomePage() {
           >
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-white mb-3">
-                What's New in V3.0.0
+                What&apos;s New in V3.0.0
               </h2>
               <p className="text-zinc-400">
                 More models, more formats, more flexibility
@@ -317,7 +309,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {FEATURES.map((feature, idx) => (
+              {FEATURES.map((feature) => (
                 <motion.div
                   key={feature.title}
                   variants={itemVariants}

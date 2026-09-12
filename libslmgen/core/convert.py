@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Dataset Converter.
 
@@ -20,15 +19,13 @@ Copyright (c) 2026 Eshan Roy
 import csv
 import json
 import logging
-from pathlib import Path
-from typing import Any, Callable, Optional
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
 
 class ConversionError(Exception):
     """Error during dataset conversion."""
-    pass
 
 
 def detect_delimiter(content: str) -> str:
@@ -42,34 +39,34 @@ def detect_delimiter(content: str) -> str:
 def convert_csv(
     content: str,
     text_column: str = "text",
-    instruction_column: Optional[str] = None,
+    instruction_column: str | None = None,
 ) -> list[dict]:
     """
     Convert CSV to ChatML format.
-    
+
     Args:
         content: CSV file content
         text_column: Column name for the full text
         instruction_column: Optional column for instruction (used for input/output)
-    
+
     Returns:
         List of ChatML-formatted entries
     """
     delimiter = detect_delimiter(content)
     lines = content.strip().split('\n')
-    
+
     if not lines:
         raise ConversionError("Empty CSV content")
-    
+
     # Parse header
     reader = csv.DictReader(lines, delimiter=delimiter)
     fieldnames = reader.fieldnames or []
-    
+
     if text_column not in fieldnames:
         raise ConversionError(
             f"Column '{text_column}' not found. Available: {fieldnames}"
         )
-    
+
     results = []
     for row in reader:
         if instruction_column and instruction_column in fieldnames:
@@ -84,9 +81,9 @@ def convert_csv(
                 {"role": "user", "content": "Convert this text: " + row.get(text_column, "")},
                 {"role": "assistant", "content": row.get(text_column, "")},
             ]
-        
+
         results.append({"messages": messages})
-    
+
     logger.info(f"Converted {len(results)} CSV entries to ChatML")
     return results
 
@@ -99,12 +96,12 @@ def convert_tsv(content: str, text_column: str = "text") -> list[dict]:
 def convert_json(
     content: str,
     text_field: str = "text",
-    input_field: Optional[str] = "input",
-    output_field: Optional[str] = "output",
+    input_field: str | None = "input",
+    output_field: str | None = "output",
 ) -> list[dict]:
     """
     Convert JSON array to ChatML format.
-    
+
     Expected JSON structure:
     [
         {"text": "..."},
@@ -115,16 +112,16 @@ def convert_json(
         data = json.loads(content)
     except json.JSONDecodeError as e:
         raise ConversionError(f"Invalid JSON: {e}")
-    
+
     if not isinstance(data, list):
         raise ConversionError("JSON must be an array of objects")
-    
+
     results = []
     for idx, item in enumerate(data):
         if not isinstance(item, dict):
             logger.warning(f"Skipping non-dict item at index {idx}")
             continue
-        
+
         if input_field and input_field in item and output_field in item:
             # Instruction + output format
             messages = [
@@ -149,9 +146,9 @@ def convert_json(
             else:
                 logger.warning(f"Skipping item at index {idx} - no string fields")
                 continue
-        
+
         results.append({"messages": messages})
-    
+
     logger.info(f"Converted {len(results)} JSON entries to ChatML")
     return results
 
@@ -159,23 +156,23 @@ def convert_json(
 def convert_jsonl(content: str) -> list[dict]:
     """
     Convert JSON Lines (JSONL) to ChatML format.
-    
+
     Each line is a valid JSON object with messages array.
     """
     lines = content.strip().split('\n')
     results = []
-    
+
     for idx, line in enumerate(lines):
         line = line.strip()
         if not line:
             continue
-        
+
         try:
             item = json.loads(line)
         except json.JSONDecodeError as e:
             logger.warning(f"Skipping invalid JSON at line {idx + 1}: {e}")
             continue
-        
+
         # Validate has messages
         if "messages" in item and isinstance(item["messages"], list):
             results.append(item)
@@ -186,7 +183,7 @@ def convert_jsonl(content: str) -> list[dict]:
                 {"role": "assistant", "content": str(item)},
             ]
             results.append({"messages": messages})
-    
+
     logger.info(f"Converted {len(results)} JSONL entries to ChatML")
     return results
 
@@ -194,7 +191,7 @@ def convert_jsonl(content: str) -> list[dict]:
 def convert_alpaca(content: str) -> list[dict]:
     """
     Convert Alpaca format to ChatML.
-    
+
     Expected JSON structure:
     [
         {
@@ -208,33 +205,33 @@ def convert_alpaca(content: str) -> list[dict]:
         data = json.loads(content)
     except json.JSONDecodeError as e:
         raise ConversionError(f"Invalid JSON: {e}")
-    
+
     if not isinstance(data, list):
         raise ConversionError("JSON must be an array of objects")
-    
+
     results = []
     for item in data:
         instruction = item.get("instruction", "")
         input_text = item.get("input", "")
         output = item.get("output", "")
-        
+
         if not output:
             logger.warning("Skipping item without output field")
             continue
-        
+
         # Build conversation
         if input_text:
             user_content = f"Instruction: {instruction}\nInput: {input_text}"
         else:
             user_content = instruction
-        
+
         messages = [
             {"role": "user", "content": user_content},
             {"role": "assistant", "content": output},
         ]
-        
+
         results.append({"messages": messages})
-    
+
     logger.info(f"Converted {len(results)} Alpaca entries to ChatML")
     return results
 
@@ -242,7 +239,7 @@ def convert_alpaca(content: str) -> list[dict]:
 def convert_sharegpt(content: str) -> list[dict]:
     """
     Convert ShareGPT format to ChatML.
-    
+
     Expected structure:
     [
         {
@@ -257,21 +254,21 @@ def convert_sharegpt(content: str) -> list[dict]:
         data = json.loads(content)
     except json.JSONDecodeError as e:
         raise ConversionError(f"Invalid JSON: {e}")
-    
+
     if not isinstance(data, list):
         raise ConversionError("JSON must be an array of objects")
-    
+
     results = []
     for item in data:
         conversations = item.get("conversations", [])
         if not conversations:
             continue
-        
+
         messages = []
         for msg in conversations:
             role = msg.get("from", "")
             value = msg.get("value", "")
-            
+
             # Map ShareGPT roles to ChatML
             if role == "human":
                 mapped_role = "user"
@@ -279,12 +276,12 @@ def convert_sharegpt(content: str) -> list[dict]:
                 mapped_role = "assistant"
             else:
                 mapped_role = "user"  # Default
-            
+
             messages.append({"role": mapped_role, "content": value})
-        
+
         if messages:
             results.append({"messages": messages})
-    
+
     logger.info(f"Converted {len(results)} ShareGPT entries to ChatML")
     return results
 
@@ -293,12 +290,12 @@ def convert_sharegpt(content: str) -> list[dict]:
 def detect_format(content: str) -> str:
     """
     Auto-detect the format of the content.
-    
+
     Returns:
         'csv', 'tsv', 'json', 'jsonl', 'alpaca', 'sharegpt', or 'unknown'
     """
     content = content.strip()
-    
+
     # Check for JSON array
     if content.startswith('['):
         try:
@@ -316,7 +313,7 @@ def detect_format(content: str) -> str:
                         return "json"
         except json.JSONDecodeError:
             pass
-    
+
     # Check for JSONL (one JSON per line)
     if '\n' in content:
         first_line = content.split('\n')[0].strip()
@@ -326,7 +323,7 @@ def detect_format(content: str) -> str:
                 return "jsonl"
             except json.JSONDecodeError:
                 pass
-    
+
     # Check for CSV/TSV
     if ',' in content or '\t' in content:
         try:
@@ -337,26 +334,26 @@ def detect_format(content: str) -> str:
                 return "csv"
         except Exception:
             pass
-    
+
     return "unknown"
 
 
 def convert_dataset(
     content: str,
-    format: Optional[str] = None,
+    format: str | None = None,
     **kwargs
 ) -> list[dict]:
     """
     Auto-convert dataset to ChatML format.
-    
+
     Args:
         content: Raw dataset content
         format: Optional format hint ('csv', 'tsv', 'json', 'jsonl', 'alpaca', 'sharegpt')
         **kwargs: Format-specific options
-    
+
     Returns:
         List of ChatML-formatted entries
-    
+
     Raises:
         ConversionError: If conversion fails
     """
@@ -364,7 +361,7 @@ def convert_dataset(
     if format is None:
         format = detect_format(content)
         logger.info(f"Detected format: {format}")
-    
+
     # Convert based on format
     converters: dict[str, Callable] = {
         "csv": convert_csv,
@@ -374,11 +371,11 @@ def convert_dataset(
         "alpaca": convert_alpaca,
         "sharegpt": convert_sharegpt,
     }
-    
+
     converter = converters.get(format)
     if converter is None:
         raise ConversionError(f"Unknown format: {format}")
-    
+
     return converter(content, **kwargs)
 
 
@@ -386,12 +383,12 @@ def convert_dataset(
 def export_to_csv(entries: list[dict], text_column: str = "text") -> str:
     """Export ChatML to CSV format."""
     rows = []
-    
+
     for entry in entries:
         messages = entry.get("messages", [])
         user_msg = ""
         assistant_msg = ""
-        
+
         for msg in messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
@@ -399,7 +396,7 @@ def export_to_csv(entries: list[dict], text_column: str = "text") -> str:
                 user_msg = content
             elif role == "assistant":
                 assistant_msg = content
-        
+
         if user_msg and assistant_msg:
             # Include as instruction + output
             rows.append({
@@ -409,26 +406,26 @@ def export_to_csv(entries: list[dict], text_column: str = "text") -> str:
             })
         elif assistant_msg:
             rows.append({text_column: assistant_msg})
-    
+
     output = io.StringIO()
     if rows:
         writer = csv.DictWriter(output, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-    
+
     return output.getvalue()
 
 
 def export_to_alpaca(entries: list[dict]) -> str:
     """Export ChatML to Alpaca format."""
     rows = []
-    
+
     for entry in entries:
         messages = entry.get("messages", [])
         instruction = ""
         input_text = ""
         output = ""
-        
+
         for msg in messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
@@ -439,36 +436,36 @@ def export_to_alpaca(entries: list[dict]) -> str:
                     input_text = content
             elif role == "assistant":
                 output = content
-        
+
         if output:
             rows.append({
                 "instruction": instruction[:500],
                 "input": input_text[:500],
                 "output": output[:2000],
             })
-    
+
     return json.dumps(rows, indent=2, ensure_ascii=False)
 
 
 def export_to_sharegpt(entries: list[dict]) -> str:
     """Export ChatML to ShareGPT format."""
     rows = []
-    
+
     for entry in entries:
         messages = entry.get("messages", [])
         conversations = []
-        
+
         for msg in messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
-            
+
             # Map ChatML roles to ShareGPT
             from_role = "human" if role == "user" else "gpt"
             conversations.append({"from": from_role, "value": content})
-        
+
         if conversations:
             rows.append({"conversations": conversations})
-    
+
     return json.dumps(rows, indent=2, ensure_ascii=False)
 
 

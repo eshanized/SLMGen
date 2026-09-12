@@ -20,6 +20,7 @@ import {
     Settings,
     Loader2
 } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface Message {
     role: string
@@ -43,7 +44,7 @@ const ROLE_STYLES = {
     assistant: { icon: Bot, bg: 'bg-[#8ccf7e]/10', text: 'text-[#8ccf7e]', label: 'Assistant' },
 }
 
-export function DatasetPreview({ sessionId, apiUrl = process.env.NEXT_PUBLIC_API_URL }: DatasetPreviewProps) {
+export function DatasetPreview({ sessionId, apiUrl = API_URL }: DatasetPreviewProps) {
     const [examples, setExamples] = useState<Example[]>([])
     const [totalCount, setTotalCount] = useState(0)
     const [page, setPage] = useState(1)

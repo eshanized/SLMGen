@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Background Job System (Simplified).
 
@@ -16,14 +15,14 @@ Copyright (c) 2026 Eshan Roy
 
 class StubJobQueue:
     """Stub job queue that does nothing (sync execution)."""
-    
+
     @property
     def is_connected(self) -> bool:
         return False
-    
+
     def enqueue(self, task_name: str, **kwargs):
         """Enqueue task (returns None for sync mode)."""
-        return None
+        return
 
 
 # Global stub instance
@@ -38,19 +37,15 @@ def get_job_queue() -> StubJobQueue:
 # Task functions are imported from routers directly for sync execution
 def ingest_task(session_id: str):
     """Stub for ingest task."""
-    pass
 
 
 def analyze_task(session_id: str):
     """Stub for analyze task."""
-    pass
 
 
 def recommend_task(session_id: str):
     """Stub for recommend task."""
-    pass
 
 
 def generate_notebook_task(session_id: str, model_id: str = None):
     """Stub for generate task."""
-    pass

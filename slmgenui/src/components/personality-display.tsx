@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { User, Sparkles, MessageSquare, Settings } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface Personality {
     tone: string
@@ -25,8 +26,6 @@ interface Personality {
 interface PersonalityDisplayProps {
     sessionId: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export function PersonalityDisplay({ sessionId }: PersonalityDisplayProps) {
     const [personality, setPersonality] = useState<Personality | null>(null)

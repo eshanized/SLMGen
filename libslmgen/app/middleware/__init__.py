@@ -7,8 +7,8 @@ Authentication and request processing middleware.
 # License: MIT License
 
 from .auth import (
-    AuthenticatedUser,
     AnonymousUser,
+    AuthenticatedUser,
     get_current_user,
     get_optional_user,
     require_role,
@@ -16,8 +16,8 @@ from .auth import (
 )
 
 __all__ = [
+    "AnonymousUser",
     "AuthenticatedUser",
-    "AnonymousUser", 
     "get_current_user",
     "get_optional_user",
     "require_role",

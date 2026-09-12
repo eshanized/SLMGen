@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Hallucination Risk Estimator.
 
@@ -10,10 +9,10 @@ might produce fabricated or ungrounded responses.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
-import re
 import logging
+import re
 from dataclasses import dataclass
-from statistics import stdev, mean, StatisticsError
+from statistics import StatisticsError, mean, stdev
 
 logger = logging.getLogger(__name__)
 
@@ -76,23 +75,23 @@ def _measure_abstraction_density(responses: list[str]) -> tuple[float, str]:
     """
     all_text = " ".join(responses).lower()
     total_words = len(re.findall(r"\b\w+\b", all_text))
-    
+
     if total_words == 0:
         return 0.5, ""
-    
+
     # Count abstract markers
     abstract_count = 0
     for marker in ABSTRACT_MARKERS:
         abstract_count += all_text.count(marker)
-    
+
     # Density per 100 words
     density = (abstract_count / total_words) * 100
-    
+
     if density > 5:
         return 0.8, "High use of uncertain language (might, probably, etc.)"
     elif density > 2:
         return 0.5, "Moderate use of qualifying language"
-    
+
     return 0.2, ""
 
 
@@ -103,24 +102,24 @@ def _measure_grounding(responses: list[str]) -> tuple[float, str]:
     Returns (score 0-1 where lower is better, explanation).
     """
     all_text = " ".join(responses).lower()
-    
+
     # Count grounding phrases
     grounding_count = 0
     for marker in GROUNDING_MARKERS:
         grounding_count += all_text.count(marker)
-    
+
     # Check for numbers/dates (concrete claims)
     numbers = len(re.findall(r"\b\d+\b", all_text))
-    
+
     # Normalize by response count
     total_responses = len(responses)
     grounding_per_response = (grounding_count + numbers / 10) / max(total_responses, 1)
-    
+
     if grounding_per_response < 0.1:
         return 0.7, "Responses lack factual grounding or citations"
     elif grounding_per_response < 0.5:
         return 0.4, ""
-    
+
     return 0.2, "Good use of factual references"
 
 
@@ -131,13 +130,13 @@ def _measure_length_variance(responses: list[str]) -> tuple[float, str]:
     """
     if len(responses) < 10:
         return 0.5, ""
-    
+
     lengths = [len(r) for r in responses]
     avg_len = mean(lengths)
-    
+
     if avg_len == 0:
         return 0.5, ""
-    
+
     try:
         std = stdev(lengths)
         coef_of_var = std / avg_len
@@ -145,12 +144,12 @@ def _measure_length_variance(responses: list[str]) -> tuple[float, str]:
         # FIX: B1 - Replaced bare except with specific exception
         # StatisticsError raised when stdev has insufficient data
         return 0.5, ""
-    
+
     if coef_of_var > 1.0:
         return 0.7, "High variance in response lengths (inconsistent behavior)"
     elif coef_of_var > 0.5:
         return 0.4, ""
-    
+
     return 0.2, ""
 
 
@@ -164,41 +163,41 @@ def _measure_overconfidence(responses: list[str]) -> tuple[float, str]:
         r"\b(always|never|everyone|no one|impossible)\b",
         r"\b(the best|the worst|the only|the first|the last)\b",
     ]
-    
+
     all_text = " ".join(responses).lower()
     total_words = len(re.findall(r"\b\w+\b", all_text))
-    
+
     if total_words == 0:
         return 0.5, ""
-    
+
     overconf_count = 0
     for pattern in overconfident_patterns:
         overconf_count += len(re.findall(pattern, all_text))
-    
+
     density = (overconf_count / total_words) * 100
-    
+
     if density > 1:
         return 0.6, "Frequent use of absolute claims"
-    
+
     return 0.2, ""
 
 
 def estimate_hallucination_risk(data: list[dict]) -> HallucinationRisk:
     """
     Estimate the hallucination risk for a model trained on this dataset.
-    
+
     Uses heuristics based on:
     - Abstraction density (vague language)
     - Grounding frequency (factual references)
     - Response length variance (behavioral consistency)
     - Overconfidence markers
-    
+
     This is a heuristic estimate, not a guarantee.
     """
     logger.info(f"Estimating hallucination risk for {len(data)} examples")
-    
+
     responses = _collect_responses(data)
-    
+
     if len(responses) < 20:
         return HallucinationRisk(
             score=0.5,
@@ -206,39 +205,39 @@ def estimate_hallucination_risk(data: list[dict]) -> HallucinationRisk:
             factors=["Insufficient data for reliable risk assessment"],
             recommendation="Add more training examples for a more accurate estimate."
         )
-    
+
     # Run all measurements
     factors = []
     scores = []
-    
+
     abs_score, abs_note = _measure_abstraction_density(responses)
     scores.append(abs_score)
     if abs_note:
         factors.append(abs_note)
-    
+
     ground_score, ground_note = _measure_grounding(responses)
     scores.append(ground_score)
     if ground_note and ground_score > 0.5:
         factors.append(ground_note)
-    
+
     var_score, var_note = _measure_length_variance(responses)
     scores.append(var_score)
     if var_note:
         factors.append(var_note)
-    
+
     overconf_score, overconf_note = _measure_overconfidence(responses)
     scores.append(overconf_score)
     if overconf_note:
         factors.append(overconf_note)
-    
+
     # Calculate overall score using documented weight constants
     overall = (
-        abs_score * RISK_WEIGHT_ABSTRACTION + 
-        ground_score * RISK_WEIGHT_GROUNDING + 
-        var_score * RISK_WEIGHT_VARIANCE + 
+        abs_score * RISK_WEIGHT_ABSTRACTION +
+        ground_score * RISK_WEIGHT_GROUNDING +
+        var_score * RISK_WEIGHT_VARIANCE +
         overconf_score * RISK_WEIGHT_OVERCONFIDENCE
     )
-    
+
     # Determine level
     if overall < 0.35:
         level = "low"
@@ -249,12 +248,12 @@ def estimate_hallucination_risk(data: list[dict]) -> HallucinationRisk:
     else:
         level = "high"
         recommendation = "This dataset may produce unreliable outputs. Consider adding grounded examples with citations."
-    
+
     if not factors:
         factors = ["No significant risk factors detected"]
-    
+
     logger.info(f"Hallucination risk: {level} ({overall:.2f})")
-    
+
     return HallucinationRisk(
         score=round(overall, 2),
         level=level,

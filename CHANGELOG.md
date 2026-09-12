@@ -52,10 +52,20 @@ All notable changes to the SLMGen project.
 - `app/routers/presets.py` - NEW Presets API
 - Updated `app/config.py` - Version 3.0.0
 
+### 🛡️ Maintenance & Stabilization Overhaul
+- **Upload & Ingestion Pipeline Fixed** - Added `ingest_from_bytes` and `ingest_from_str` to `libslmgen/core/ingest.py`, resolving broken worker dependencies and restoring immediate synchronous dataset processing.
+- **Missing Endpoints Restored** - Registered `presets.router` in `app/main.py` and fixed routing for `/presets`.
+- **Advanced Intelligence Router Fixed** - Resolved undefined symbol errors (`compare_prompts`, `generate_model_card`) in `app/routers/advanced.py`.
+- **Colab GPU Guardrails & VRAM Tiering** - Added automated GPU hardware tiering (`T4 (Free)` for models <10B vs `A100 (Colab Pro)` for heavy weights like 70B/84B MoE) in `recommender.py`, notebook generator `notebook.py`, and interactive UI badge in `model-card.tsx`.
+- **Centralized Frontend API Configuration** - Consolidated scattered `NEXT_PUBLIC_API_URL` fallback definitions into exported `API_URL` in `src/lib/api.ts`.
+- **Dead Code Pruned** - Removed dead inference playground & polling pipeline artifacts from frontend and backend.
+- **Quality Gates & CI/CD** - Added `libslmgen/pyproject.toml`, resolved all ESLint and Ruff linter errors, added full integration test suite in `tests/test_routers.py` (60/60 tests passing), and updated GitHub Actions CI pipeline.
+- **Makefile & DX Polish** - Added `make test` target, updated `requirements.txt` to V3.0.0, and updated `README.md` with `uv` quickstart instructions.
+
 ### 🎨 Frontend Changes
 
 - Updated homepage to show 18 models
-- New model cards for V3 models
+- New model cards for V3 models with GPU requirement badges
 - Stats updated (18 models, 128K context)
 
 ---

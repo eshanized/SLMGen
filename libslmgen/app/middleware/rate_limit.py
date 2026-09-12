@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Rate Limiting Middleware.
 
@@ -11,8 +10,8 @@ Uses slowapi for in-memory rate limiting.
 # Copyright (c) 2026 Eshan Roy
 
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -22,7 +21,7 @@ from app.config import settings
 def get_real_client_ip(request: Request) -> str:
     """
     Get the real client IP, handling reverse proxies.
-    
+
     Checks X-Forwarded-For header for proxied requests,
     falls back to direct connection IP.
     """

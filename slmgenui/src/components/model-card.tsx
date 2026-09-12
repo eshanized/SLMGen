@@ -111,6 +111,15 @@ export function ModelCard({ model, isPrimary = false, onSelect }: ModelCardProps
                         <span className="px-2 py-1 bg-[#141b1e] rounded-md text-sm text-[#8a9899] border border-[#2d3437]">
                             {(model.context_window / 1000).toFixed(0)}K context
                         </span>
+                        {model.gpu_requirement && (
+                            <span className={`px-2 py-1 rounded-md text-sm border font-medium ${
+                                model.gpu_requirement.includes('Free')
+                                    ? 'bg-[#8ccf7e]/10 text-[#8ccf7e] border-[#8ccf7e]/30'
+                                    : 'bg-[#e5c76b]/10 text-[#e5c76b] border-[#e5c76b]/30'
+                            }`}>
+                                {model.gpu_requirement}
+                            </span>
+                        )}
                         {model.is_gated && (
                             <span className="flex items-center gap-1 px-2 py-1 bg-[#e5c76b]/10 text-[#e5c76b] rounded-md text-sm">
                                 <Lock className="w-3.5 h-3.5" />

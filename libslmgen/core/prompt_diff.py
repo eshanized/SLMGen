@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Prompt Diff Tool.
 
@@ -10,8 +9,8 @@ Highlights what changed and how it might affect behavior.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
-import re
 import logging
+import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 
@@ -42,14 +41,14 @@ def _extract_instructions(text: str) -> set[str]:
         r"((?:always|never|don't|do not)[^.!?]+)",
         r"((?:be|keep|make sure|ensure)[^.!?]+)",
     ]
-    
+
     instructions = set()
     text_lower = text.lower()
-    
+
     for pattern in patterns:
         matches = re.findall(pattern, text_lower)
         instructions.update(matches)
-    
+
     return instructions
 
 
@@ -63,7 +62,7 @@ def _extract_keywords(text: str) -> set[str]:
         "in", "for", "on", "with", "at", "by", "from", "as", "into", "through",
         "and", "or", "but", "if", "then", "so", "than", "that", "this", "it"
     }
-    
+
     words = re.findall(r"\b[a-z]{3,}\b", text.lower())
     return set(w for w in words if w not in stop_words)
 
@@ -71,18 +70,18 @@ def _extract_keywords(text: str) -> set[str]:
 def compare_prompts(prompt_a: str, prompt_b: str) -> PromptDiff:
     """
     Compare two prompts and identify meaningful differences.
-    
+
     Goes beyond simple text diff to understand semantic changes.
     """
     logger.info("Comparing two prompts")
-    
+
     if not prompt_a.strip() and not prompt_b.strip():
         return PromptDiff(
             similarity=1.0,
             changes=[],
             summary="Both prompts are empty."
         )
-    
+
     if not prompt_a.strip():
         return PromptDiff(
             similarity=0.0,
@@ -93,7 +92,7 @@ def compare_prompts(prompt_a: str, prompt_b: str) -> PromptDiff:
             )],
             summary="Prompt B is entirely new."
         )
-    
+
     if not prompt_b.strip():
         return PromptDiff(
             similarity=0.0,
@@ -104,54 +103,54 @@ def compare_prompts(prompt_a: str, prompt_b: str) -> PromptDiff:
             )],
             summary="Prompt was removed entirely."
         )
-    
+
     # Calculate text similarity
     similarity = SequenceMatcher(None, prompt_a.lower(), prompt_b.lower()).ratio()
-    
+
     changes = []
-    
+
     # Compare instructions
     instructions_a = _extract_instructions(prompt_a)
     instructions_b = _extract_instructions(prompt_b)
-    
+
     removed_instructions = instructions_a - instructions_b
     added_instructions = instructions_b - instructions_a
-    
+
     for instr in removed_instructions:
         changes.append(PromptChange(
             type="removed",
             description=f"Removed: '{instr[:50]}...'",
             impact="Model may no longer follow this guideline"
         ))
-    
+
     for instr in added_instructions:
         changes.append(PromptChange(
             type="added",
             description=f"Added: '{instr[:50]}...'",
             impact="New behavioral constraint added"
         ))
-    
+
     # Compare keywords for topic shifts
     keywords_a = _extract_keywords(prompt_a)
     keywords_b = _extract_keywords(prompt_b)
-    
+
     removed_kw = keywords_a - keywords_b
     added_kw = keywords_b - keywords_a
-    
+
     if len(removed_kw) > 5:
         changes.append(PromptChange(
             type="modified",
             description=f"Removed focus on: {', '.join(list(removed_kw)[:5])}...",
             impact="Topic focus has shifted"
         ))
-    
+
     if len(added_kw) > 5:
         changes.append(PromptChange(
             type="modified",
             description=f"New focus on: {', '.join(list(added_kw)[:5])}...",
             impact="New topics or capabilities introduced"
         ))
-    
+
     # Check length changes
     len_diff = len(prompt_b) - len(prompt_a)
     if abs(len_diff) > len(prompt_a) * 0.5:  # more than 50% change
@@ -167,7 +166,7 @@ def compare_prompts(prompt_a: str, prompt_b: str) -> PromptDiff:
                 description="Prompt is significantly shorter",
                 impact="Simpler instructions, potentially more flexible"
             ))
-    
+
     # Generate summary
     if similarity > 0.9:
         summary = "Prompts are nearly identical with minor wording changes."
@@ -177,9 +176,9 @@ def compare_prompts(prompt_a: str, prompt_b: str) -> PromptDiff:
         summary = "Prompts share some common elements but differ significantly."
     else:
         summary = "Prompts are substantially different in content and intent."
-    
+
     logger.info(f"Prompt comparison: {similarity:.2f} similarity, {len(changes)} changes")
-    
+
     return PromptDiff(
         similarity=round(similarity, 2),
         changes=changes[:10],  # limit to 10 changes

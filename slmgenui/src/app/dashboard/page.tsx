@@ -34,12 +34,11 @@ import { DataPreview } from '@/components/data-preview';
 import { TerminalSimulator } from '@/components/terminal-simulator';
 import { CustomModelInput } from '@/components/custom-model-input';
 import { 
-    uploadDatasetAsync, 
-    getJobStatus,
-    triggerAnalysis,
-    triggerRecommendations,
-    triggerGeneration,
-    ApiError 
+    uploadDataset, 
+    getRecommendation,
+    generateNotebook,
+    ApiError,
+    API_URL
 } from '@/lib/api';
 import {
     Rocket,
@@ -52,7 +51,7 @@ import {
     RefreshCw,
     Loader2,
 } from '@/components/icons';
-import type { TaskType, DeploymentTarget, JobStatusResponse } from '@/lib/types';
+import type { TaskType, DeploymentTarget } from '@/lib/types';
 
 // Wizard step Labels
 const STEPS = [
@@ -79,31 +78,30 @@ export default function DashboardPage() {
     const currentStepIndex = STEPS.findIndex(s => s.key === session.currentStep);
 
     // Handle file upload with async processing
+    // Helper to read file preview locally
+    const readFilePreview = (file: File, maxBytes = 10000): Promise<string> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            const slice = file.slice(0, maxBytes);
+            reader.onload = (e) => resolve((e.target?.result as string) || '');
+            reader.onerror = () => resolve('');
+            reader.readAsText(slice);
+        });
+    };
+
+    // Handle file upload
     const handleUpload = useCallback(async (file: File) => {
         setIsProcessing(true);
-        const toastId = toast.loading('Uploading dataset...');
+        const toastId = toast.loading('Uploading and analyzing dataset...');
 
         try {
-            const response = await uploadDatasetAsync(file);
+            const [preview, response] = await Promise.all([
+                readFilePreview(file),
+                uploadDataset(file)
+            ]);
             
-            // Set session with stats (may be null if still processing)
-            session.setSession(response.session_id, response.stats, undefined, true);
-            
-            // Start polling for job status
-            session.startJobPolling(response.session_id, 
-                (status) => {
-                    // On complete
-                    if (status.stats) {
-                        toast.success('Dataset processed successfully!', { id: toastId });
-                    }
-                },
-                (error) => {
-                    toast.error(`Processing failed: ${error}`, { id: toastId });
-                }
-            );
-
-            toast.info('Dataset uploaded! Processing in background...', { id: toastId });
-
+            session.setSession(response.session_id, response.stats, preview, false);
+            toast.success('Dataset uploaded and analyzed!', { id: toastId });
         } catch (err) {
             toast.dismiss(toastId);
             if (err instanceof ApiError) {
@@ -123,61 +121,13 @@ export default function DashboardPage() {
         session.setTask(task);
         session.setDeployment(deployment);
 
-        // If job is still processing, we need to wait
-        if (session.isJobProcessing) {
-            toast.info('Waiting for dataset processing to complete...');
-            
-            // Poll until we can proceed
-            const checkStatus = async () => {
-                const status = await getJobStatus(session.sessionId!);
-                session.setJobStatus(status);
-                
-                if (status.status === 'completed' || status.status === 'failed') {
-                    return status;
-                }
-                
-                // Wait and retry
-                return new Promise<JobStatusResponse>((resolve) => {
-                    setTimeout(async () => {
-                        const result = await checkStatus();
-                        resolve(result);
-                    }, 2000);
-                });
-            };
-            
-            try {
-                const finalStatus = await checkStatus();
-                if (finalStatus.status === 'failed') {
-                    toast.error(finalStatus.error || 'Processing failed');
-                    return;
-                }
-            } catch {
-                toast.error('Failed to check processing status');
-                return;
-            }
-        }
-
         setIsLoading(true);
         const toastId = toast.loading('Getting recommendations...');
 
         try {
-            // Trigger recommendations via pipeline
-            await triggerRecommendations(session.sessionId, task, deployment);
-            
-            // Poll for completion
-            session.startJobPolling(session.sessionId,
-                () => {},
-                (status) => {
-                    if (status.recommendations) {
-                        session.setRecommendation(status.recommendations);
-                        toast.success('Recommendations ready!', { id: toastId });
-                    }
-                },
-                (error) => {
-                    toast.error(`Failed: ${error}`, { id: toastId });
-                }
-            );
-
+            const recommendations = await getRecommendation(session.sessionId, task, deployment);
+            session.setRecommendation(recommendations);
+            toast.success('Recommendations ready!', { id: toastId });
         } catch (err) {
             toast.dismiss(toastId);
             if (err instanceof ApiError) {
@@ -190,7 +140,7 @@ export default function DashboardPage() {
         }
     }, [session]);
 
-    // Handle notebook Generation
+    // Handle notebook generation
     const handleGenerateNotebook = useCallback(async (modelId?: string) => {
         if (!session.sessionId) return;
 
@@ -198,29 +148,9 @@ export default function DashboardPage() {
         const toastId = toast.loading('Generating notebook...');
 
         try {
-            // Trigger generation via pipeline
-            await triggerGeneration(session.sessionId, modelId);
-            
-            // Poll for completion
-            session.startJobPolling(session.sessionId,
-                () => {},
-                (status) => {
-                    if (status.notebook_path) {
-                        session.setNotebook({
-                            session_id: session.sessionId!,
-                            notebook_filename: 'training.ipynb',
-                            download_url: `/download/${session.sessionId}`,
-                            colab_url: null,
-                            message: 'Notebook ready!',
-                        });
-                        toast.success('Notebook generated successfully!', { id: toastId });
-                    }
-                },
-                (error) => {
-                    toast.error(`Failed: ${error}`, { id: toastId });
-                }
-            );
-
+            const notebook = await generateNotebook(session.sessionId, modelId);
+            session.setNotebook(notebook);
+            toast.success('Notebook generated successfully!', { id: toastId });
         } catch (err) {
             toast.dismiss(toastId);
             if (err instanceof ApiError) {
@@ -233,27 +163,9 @@ export default function DashboardPage() {
         }
     }, [session]);
 
-    // Handle retry failed job
-    const handleRetry = useCallback(async () => {
-        if (!session.sessionId) return;
-
-        setIsProcessing(true);
-        try {
-            await triggerAnalysis(session.sessionId);
-            session.startJobPolling(session.sessionId,
-                () => {},
-                () => {
-                    toast.success('Processing complete!');
-                },
-                (error) => {
-                    toast.error(`Retry failed: ${error}`);
-                }
-            );
-        } catch {
-            toast.error('Failed to retry processing');
-        } finally {
-            setIsProcessing(false);
-        }
+    // Handle retry / start over
+    const handleRetry = useCallback(() => {
+        session.reset();
     }, [session]);
 
     // Handle Start over
@@ -500,7 +412,7 @@ export default function DashboardPage() {
                             >
                                 <NotebookReady
                                     filename={session.notebook.notebook_filename}
-                                    downloadUrl={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${session.notebook.download_url}`}
+                                    downloadUrl={`${API_URL}${session.notebook.download_url}`}
                                     colabUrl={session.notebook.colab_url}
                                     onStartOver={handleStartOver}
                                 />

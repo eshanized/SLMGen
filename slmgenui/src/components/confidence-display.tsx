@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { Shield } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface Confidence {
     score: number
@@ -25,8 +26,6 @@ interface Confidence {
 interface ConfidenceDisplayProps {
     sessionId: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export function ConfidenceDisplay({ sessionId }: ConfidenceDisplayProps) {
     const [confidence, setConfidence] = useState<Confidence | null>(null)

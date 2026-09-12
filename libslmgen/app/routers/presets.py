@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Presets Router.
 
 Training presets configuration.
 """
 import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from core.training_presets import (
     PRESETS,
-    get_preset,
-    list_presets,
-    get_recommended_preset,
-    get_notebook_config,
     get_default_targets,
-    TrainingPreset,
+    get_notebook_config,
+    get_preset,
+    get_recommended_preset,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,24 +35,24 @@ class PresetDetail(BaseModel):
     name: str
     description: str
     use_case: str
-    
+
     # LoRA
     lora_rank: int
     lora_alpha: int
     lora_dropout: float
-    
+
     # Training
     learning_rate: float
     num_epochs: int
     batch_size: int
     gradient_accumulation: int
     max_seq_length: int
-    
+
     # Optimization
     warmup_steps: int
     scheduler: str
     optimizer: str
-    
+
     # Quantization
     load_in_4bit: bool
     bnb_4bit_quant_type: str
@@ -102,6 +100,7 @@ class TargetsResponse(BaseModel):
     target_modules: list[str]
 
 
+@router.get("", response_model=PresetListResponse)
 @router.get("/", response_model=PresetListResponse)
 async def list_presets_endpoint():
     """List all available presets."""
@@ -114,7 +113,7 @@ async def list_presets_endpoint():
         )
         for key, preset in PRESETS.items()
     ]
-    
+
     return PresetListResponse(presets=presets)
 
 
@@ -124,7 +123,7 @@ async def get_preset_endpoint(preset_key: str):
     preset = get_preset(preset_key)
     if preset is None:
         raise HTTPException(status_code=404, detail=f"Preset not found: {preset_key}")
-    
+
     return PresetDetailResponse(
         preset=PresetDetail(
             key=preset.key,
@@ -156,11 +155,11 @@ async def recommend_preset_endpoint(request: RecommendPresetRequest):
         dataset_size=request.dataset_size,
         use_case=request.use_case,
     )
-    
+
     preset = get_preset(preset_key)
     if preset is None:
         raise HTTPException(status_code=404, detail=f"Preset not found: {preset_key}")
-    
+
     # Generate reason
     reason = ""
     if request.use_case == "edge":
@@ -171,7 +170,7 @@ async def recommend_preset_endpoint(request: RecommendPresetRequest):
         reason = "Small dataset - quick demo mode"
     else:
         reason = "Production-ready settings"
-    
+
     return RecommendPresetResponse(
         preset_key=preset_key,
         preset_name=preset.name,
@@ -187,7 +186,7 @@ async def get_notebook_config_endpoint(request: NotebookConfigRequest):
         model_id=request.model_id,
         dataset_size=request.dataset_size,
     )
-    
+
     return NotebookConfigResponse(config=config)
 
 
@@ -195,7 +194,7 @@ async def get_notebook_config_endpoint(request: NotebookConfigRequest):
 async def get_targets_endpoint(model_key: str):
     """Get default LoRA targets for a model."""
     targets = get_default_targets(model_key)
-    
+
     return TargetsResponse(
         model_key=model_key,
         target_modules=targets,

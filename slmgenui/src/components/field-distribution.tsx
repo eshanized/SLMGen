@@ -20,6 +20,7 @@ import {
     AlertTriangle,
     Check
 } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface Distribution {
     roles: Record<string, number>
@@ -34,7 +35,7 @@ interface FieldDistributionProps {
     apiUrl?: string
 }
 
-export function FieldDistribution({ sessionId, apiUrl = process.env.NEXT_PUBLIC_API_URL }: FieldDistributionProps) {
+export function FieldDistribution({ sessionId, apiUrl = API_URL }: FieldDistributionProps) {
     const [distribution, setDistribution] = useState<Distribution | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)

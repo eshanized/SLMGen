@@ -4,7 +4,7 @@
   "metadata": {
     "colab": {
       "provenance": [],
-      "gpuType": "T4"
+      "gpuType": "{{ gpu_type }}"
     },
     "kernelspec": {
       "name": "python3",
@@ -30,7 +30,7 @@
         "- **Examples:** {{ num_examples }}\n",
         "- **Task:** {{ task_type }}\n",
         "- **Model:** {{ model_name }} ({{ model_id }})\n",
-        "- **Estimated Time:** ~{{ training_time }} minutes on T4 GPU\n",
+        "- **Estimated Time:** ~{{ training_time }} minutes on {{ gpu_label }}\n",
         "\n",
         "---\n",
         "\n",
@@ -83,7 +83,7 @@
         "\n",
         "# Make sure we have a GPU\n",
         "if not torch.cuda.is_available():\n",
-        "    raise RuntimeError(\"❌ No GPU found! Go to Runtime → Change runtime type → T4 GPU\")\n",
+        "    raise RuntimeError(\"❌ No GPU found! Go to Runtime → Change runtime type → {{ gpu_label }}\")\n",
         "\n",
         "gpu_name = torch.cuda.get_device_name(0)\n",
         "gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1e9\n",

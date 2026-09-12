@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Colab Notebook Generator.
 
@@ -43,10 +42,10 @@ def _estimate_training_time(model_size: str, num_examples: int) -> int:
     }
     # Get base time or default to 15 for unknown sizes
     base = base_times.get(model_size, 15)
-    
+
     # Scale by dataset size (100 examples = 1x scale)
     scale = num_examples / 100
-    
+
     # 3 epochs by default
     return int(base * scale * 3)
 
@@ -64,14 +63,22 @@ def generate_notebook(
     Generate a complete Jupyter notebook for fine-tuning using Jinja2 templates.
     """
     logger.info(f"Generating notebook for {model_name} with {num_examples} examples")
-    
+
     # Encode dataset as Base64
     dataset_b64 = base64.b64encode(dataset_jsonl.encode()).decode()
-    
+
     # Get model-specific config
     lora_targets = get_lora_targets(model_id)
     training_time = _estimate_training_time(model_size, num_examples)
-    
+
+    # Determine hardware tier
+    if model_size in {"14B", "24B", "32B", "70B", "84B"}:
+        gpu_type = "A100"
+        gpu_label = "A100 GPU (Colab Pro)"
+    else:
+        gpu_type = "T4"
+        gpu_label = "T4 GPU (Free)"
+
     # Prepare context for template
     context = {
         "model_name": model_name,
@@ -83,11 +90,13 @@ def generate_notebook(
         "is_gated": is_gated,
         "dataset_b64": dataset_b64,
         "lora_targets": str(lora_targets),
+        "gpu_type": gpu_type,
+        "gpu_label": gpu_label,
     }
-    
+
     # Render template
     template = env.get_template("notebook.json.j2")
     notebook_json = template.render(**context)
-    
+
     logger.info("Notebook generated successfully")
     return notebook_json

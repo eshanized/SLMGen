@@ -63,11 +63,11 @@ SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL da
 | Component | Technology |
 |-----------|------------|
 | **Backend** | Python 3.11, FastAPI, Pydantic v2 |
-| **Session Store** | Redis (async via `redis-py`) |
+| **Session Store** | In-Memory (Thread-safe TTL eviction, zero Redis dependency) |
 | **Frontend** | Next.js 16, TypeScript, React 19, Framer Motion |
 | **Design** | Tailwind CSS, JetBrains Mono, Everblush Theme |
-| **Auth** | Supabase (OAuth + Email) |
-| **Training** | Unsloth + LoRA on Google Colab (Free T4) |
+| **Auth** | Supabase (Optional OAuth + Email, or local mock) |
+| **Training** | Unsloth + LoRA on Google Colab (Free T4 & A100 tiers) |
 | **Deployment** | Vercel (Frontend) + Render (Backend) |
 
 ---
@@ -75,21 +75,22 @@ SLMGEN is a web application that automates SLM fine-tuning. Upload your JSONL da
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11+
+- Python 3.11+ (or [uv](https://github.com/astral-sh/uv))
 - Node.js 18+
-- Redis 7+ (for session storage)
-- Supabase project
+- Supabase project *(optional — set `AUTH_DISABLED=true` for 100% local development without Supabase)*
 
 ### Backend
 
 ```bash
-# Start Redis (if not already running)
-redis-server &
-
 cd libslmgen
+
+# Option A: Instant run with uv (recommended)
+uv run uvicorn app.main:app --reload --port 8000
+
+# Option B: Standard virtualenv
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # Configure Redis URL & Supabase keys
+cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -113,32 +114,40 @@ slmgen/
 ├── libslmgen/                  # Python Backend
 │   ├── app/
 │   │   ├── main.py             # FastAPI app
-│   │   ├── routers/            # API endpoints
-│   │   │   ├── upload.py       # Dataset upload
-│   │   │   ├── analyze.py      # Dataset analysis
-│   │   │   ├── recommend.py    # Model recommendation
-│   │   │   ├── generate.py     # Notebook generation
-│   │   │   ├── advanced.py     # Intelligence features
-│   │   │   └── jobs.py         # Job history
-│   │   └── session.py          # Thread-safe sessions
+│   │   ├── session_store.py    # Thread-safe in-memory session store
+│   │   ├── models.py           # Pydantic data schemas
+│   │   ├── config.py           # Environment & settings
+│   │   └── routers/            # API endpoints
+│   │       ├── upload.py       # Dataset upload & validation
+│   │       ├── analyze.py      # Dataset analysis
+│   │       ├── recommend.py    # Model recommendation
+│   │       ├── generate.py     # Notebook generation
+│   │       ├── convert.py      # Dataset format conversion (CSV, JSON, Alpaca, ShareGPT)
+│   │       ├── presets.py      # Training presets (Quick Demo, Production, etc.)
+│   │       ├── export.py       # Model export guides (Ollama, GGUF, vLLM)
+│   │       ├── advanced.py     # Intelligence features
+│   │       └── jobs.py         # Job history (Supabase)
 │   └── core/
-│       ├── ingest.py           # JSONL parsing
+│       ├── ingest.py           # JSONL parsing & validation
 │       ├── quality.py          # Quality scoring
 │       ├── analyzer.py         # Dataset analysis
-│       ├── recommender.py      # 100-point scoring engine
-│       ├── notebook.py         # Jupyter generator
+│       ├── recommender.py      # 100-point scoring engine + GPU tiering
+│       ├── notebook.py         # Jupyter notebook generator
+│       ├── convert.py          # Format converters
+│       ├── training_presets.py # Hyperparameter presets
+│       ├── export.py           # Export template generator
 │       ├── personality.py      # Personality detection
 │       ├── risk.py             # Hallucination risk
 │       ├── confidence.py       # Training confidence
 │       ├── behavior.py         # Behavior composer
 │       ├── prompt_linter.py    # Prompt linting
 │       └── model_card.py       # README generator
-├── slmgenui/                   # Next.js Frontend
+├── slmgenui/                   # Next.js 16 Frontend
 │   └── src/
-│       ├── app/                # Pages (dashboard, login, signup)
-│       ├── components/         # UI components
+│       ├── app/                # Pages (dashboard, login, signup, history, settings)
+│       ├── components/         # UI components & charts
 │       ├── lib/                # API client & types
-│       └── hooks/              # React hooks (with persistence)
+│       └── hooks/              # React hooks (with sessionStorage persistence)
 ├── docs/
 │   ├── API.md                  # API reference
 │   ├── USER_GUIDE.md           # User guide
@@ -149,17 +158,27 @@ slmgen/
 
 ---
 
-## 📊 Supported Models
+## 📊 Supported Models (V3.0.0)
 
-| Model | Size | Context | Best For | Gated |
-|-------|------|---------|----------|-------|
-| **Phi-4 Mini** | 3.8B | 16K | Classification, Extraction | ❌ |
-| **Llama 3.2** | 1B/3B | 8K | Q&A, Conversations | ✅ |
-| **Gemma 2** | 2B | 8K | Edge, Mobile | ✅ |
-| **Qwen 2.5** | 0.5B-3B | 32K | Multilingual, JSON | ❌ |
-| **Mistral 7B** | 7B | 32K | Generation, Creative | ❌ |
-| **TinyLlama** | 1.1B | 2K | Ultra-lightweight | ❌ |
-| **SmolLM2** | 135M-1.7B | 8K | Small devices | ❌ |
+| Model | Size | Context | Colab GPU Tier | Best For | Gated |
+|-------|------|---------|----------------|----------|-------|
+| **DeepSeek V3** | 84B | 64K | A100 (Pro) | MoE reasoning, complex QA | ❌ |
+| **Llama 3.3 70B** | 70B | 128K | A100 (Pro) | SOTA quality, reasoning | ✅ |
+| **Qwen 3.5 32B** | 32B | 64K | A100 (Pro) | Hybrid thinking, coding | ❌ |
+| **Mistral Small 3**| 24B | 131K | A100 (Pro) | Code, 128K context | ❌ |
+| **Qwen 2.5 14B** | 14B | 32K | A100 (Pro) | Long context, reasoning | ❌ |
+| **Llama 3.3 8B** | 8B | 128K | T4 (Free) | General purpose, 128K context | ✅ |
+| **Mistral 7B** | 7B | 32K | T4 (Free) | Creative generation, QA | ❌ |
+| **Qwen 3 4B** | 4B | 32K | T4 (Free) | Thinking mode, math, code | ❌ |
+| **Gemma 3 4B** | 4B | 131K | T4 (Free) | Multimodal, long context | ✅ |
+| **Phi-4 Mini** | 3.8B | 16K | T4 (Free) | Classification, extraction | ❌ |
+| **SmolLM3 3B** | 3B | 128K | T4 (Free) | Multilingual, edge-ready | ❌ |
+| **Llama 3.2 3B** | 3B | 8K | T4 (Free) | Fast Q&A, conversations | ✅ |
+| **Qwen 2.5 3B** | 3B | 32K | T4 (Free) | Multilingual, JSON output | ❌ |
+| **Gemma 2 2B** | 2B | 8K | T4 (Free) | Edge, mobile, browser | ✅ |
+| **SmolLM2 1.7B** | 1.7B | 8K | T4 (Free) | Ultra-compact, low memory | ❌ |
+| **Llama 3.2 1B** | 1B | 8K | T4 (Free) | Lightweight mobile | ✅ |
+| **TinyLlama** | 1.1B | 2K | T4 (Free) | Minimal compute demos | ❌ |
 
 ---
 
@@ -199,16 +218,20 @@ See [DEPLOY.md](docs/DEPLOY.md) for full instructions.
 ```bash
 # Backend (.env)
 ALLOWED_ORIGINS=https://slmgen.vercel.app,http://localhost:3000
-UPLOAD_DIR=/tmp/uploads
-REDIS_URL=redis://localhost:6379/0
 SESSION_TTL_SECONDS=1800
+AUTH_DISABLED=true  # Set to true for zero-setup local dev without Supabase
+
+# Optional: Supabase (for persistent job history and user authentication)
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-JWT_SECRET=your_jwt_secret
+SUPABASE_SERVICE_KEY=your_service_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+
+# Optional: HuggingFace Token (for validating gated models like Llama/Gemma)
+HF_TOKEN=hf_...
 
 # Frontend (.env.local)
-NEXT_PUBLIC_API_URL=https://slmgen-api.onrender.com
+NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```

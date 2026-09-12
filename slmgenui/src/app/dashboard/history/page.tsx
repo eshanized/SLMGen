@@ -22,6 +22,7 @@ import {
     Filter,
     ArrowLeft
 } from '@/components/icons'
+import { API_URL } from '@/lib/api'
 
 interface Job {
     id: string
@@ -62,7 +63,7 @@ export default function HistoryPage() {
         setError(null)
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs`, {
+            const response = await fetch(`${API_URL}/jobs`, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
                 }
@@ -84,7 +85,7 @@ export default function HistoryPage() {
     const handleDelete = async (jobId: string) => {
         if (!session?.access_token) return
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${jobId}`, {
+        const response = await fetch(`${API_URL}/jobs/${jobId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${session.access_token}`

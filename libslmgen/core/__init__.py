@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Core Processing Package.
 
@@ -9,29 +8,36 @@ Contains data processing, analysis, and notebook generation logic.
 # License: MIT License
 # Copyright (c) 2026 Eshan Roy
 
-from .ingest import ingest_data
-from .quality import validate_quality
 from .analyzer import analyze_dataset
-from .recommender import get_recommendations
+from .behavior import BehaviorConfig, compose_behavior
+from .confidence import calculate_confidence
+from .failure_preview import generate_failure_previews
+from .ingest import ingest_data, ingest_from_bytes, ingest_from_str
+from .model_card import generate_model_card
 from .notebook import generate_notebook
 
 # Advanced features
 from .personality import detect_personality
-from .risk import estimate_hallucination_risk
-from .confidence import calculate_confidence
-from .behavior import compose_behavior, BehaviorConfig
-from .prompt_linter import lint_prompt
-from .failure_preview import generate_failure_previews
-from .model_card import generate_model_card
 from .prompt_diff import compare_prompts
-from .reverse_prompt import infer_reverse_prompt  # FIX: C1 - Added missing module
+from .prompt_linter import lint_prompt
+from .quality import validate_quality
+from .recommender import get_recommendations
 
 # Model Registry
-from .registry import validate_hf_model, check_compatibility, get_registry, SUPPORTED_ARCHITECTURES
+from .registry import (
+    SUPPORTED_ARCHITECTURES,
+    check_compatibility,
+    get_registry,
+    validate_hf_model,
+)
+from .reverse_prompt import infer_reverse_prompt  # FIX: C1 - Added missing module
+from .risk import estimate_hallucination_risk
 
 __all__ = [
     # Core
     "ingest_data",
+    "ingest_from_bytes",
+    "ingest_from_str",
     "validate_quality",
     "analyze_dataset",
     "get_recommendations",

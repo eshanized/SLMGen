@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Converter Router.
 
 Converts datasets between formats.
 """
 import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from core.convert import convert_dataset, detect_format, ConversionError
-from core.convert import export_to_csv, export_to_alpaca, export_to_sharegpt
+from core.convert import (
+    ConversionError,
+    convert_dataset,
+    detect_format,
+    export_to_alpaca,
+    export_to_csv,
+    export_to_sharegpt,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -63,7 +69,7 @@ class ExportResponse(BaseModel):
 async def convert_dataset_endpoint(request: ConvertRequest):
     """
     Convert dataset to ChatML format.
-    
+
     Supported formats:
     - csv: CSV with text column
     - tsv: TSV with text column
@@ -75,7 +81,7 @@ async def convert_dataset_endpoint(request: ConvertRequest):
     try:
         # Detect format if not specified
         format_name = request.format or detect_format(request.content)
-        
+
         # Convert
         kwargs = {}
         if format_name in ("csv", "tsv"):
@@ -86,16 +92,16 @@ async def convert_dataset_endpoint(request: ConvertRequest):
             kwargs["text_field"] = request.text_column
             kwargs["input_field"] = request.input_field
             kwargs["output_field"] = request.output_field
-        
+
         entries = convert_dataset(request.content, format=format_name, **kwargs)
-        
+
         return ConvertResponse(
             entries=entries,
             count=len(entries),
             detected_format=format_name,
             chatml_format=True,
         )
-    
+
     except ConversionError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -107,7 +113,7 @@ async def convert_dataset_endpoint(request: ConvertRequest):
 async def detect_format_endpoint(request: DetectFormatRequest):
     """Detect dataset format."""
     format_name = detect_format(request.content)
-    
+
     # Confidence based on format detection
     if format_name in ("jsonl", "alpaca", "sharegpt"):
         confidence = "high"
@@ -115,7 +121,7 @@ async def detect_format_endpoint(request: DetectFormatRequest):
         confidence = "medium"
     else:
         confidence = "low"
-    
+
     return DetectFormatResponse(
         format=format_name,
         confidence=confidence,
@@ -134,13 +140,13 @@ async def export_dataset_endpoint(request: ExportRequest):
             content = export_to_sharegpt(request.entries)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported format: {request.format}")
-        
+
         return ExportResponse(
             content=content,
             format=request.format,
             size=len(content),
         )
-    
+
     except ConversionError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

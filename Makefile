@@ -7,7 +7,7 @@ PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 UVICORN := $(VENV)/bin/uvicorn
 
-.PHONY: all install install-backend install-frontend dev dev-backend dev-frontend build run clean help venv
+.PHONY: all install install-backend install-frontend dev dev-backend dev-frontend build run test test-backend test-frontend lint clean help venv
 
 # Default target
 all: help
@@ -66,13 +66,24 @@ run-backend: venv
 run-frontend:
 	cd slmgenui && npm run start
 
+# Tests
+test: test-backend test-frontend
+
+test-backend: venv
+	@echo "🧪 Running backend test suite..."
+	cd libslmgen && ../$(PYTHON) -m pytest tests/
+
+test-frontend:
+	@echo "🧪 Running frontend type-check & lint..."
+	cd slmgenui && npm run lint
+
 # Lint and type check
 lint: venv
-	@echo "🔍 Checking Python syntax..."
-	cd libslmgen && ../$(PYTHON) -m py_compile app/main.py app/models.py app/config.py app/session.py \
+	@echo "🔍 Checking Python syntax & tests..."
+	cd libslmgen && ../$(PYTHON) -m py_compile app/main.py app/models.py app/config.py app/session_store.py \
 		core/ingest.py core/quality.py core/analyzer.py core/recommender.py core/notebook.py \
 		app/routers/upload.py app/routers/analyze.py app/routers/recommend.py app/routers/generate.py
-	@echo "🔍 Checking TypeScript..."
+	@echo "🔍 Checking TypeScript & ESLint..."
 	cd slmgenui && npm run lint
 	@echo "✅ All checks passed"
 
@@ -102,6 +113,7 @@ help:
 	@echo "  dev-frontend     Run Next.js frontend only (dev mode)"
 	@echo "  run              Run complete project (production)"
 	@echo "  build            Production build frontend"
+	@echo "  test             Run all backend and frontend tests"
 	@echo "  lint             Check code quality"
 	@echo "  clean            Remove build artifacts and venv"
 	@echo "  help             Show this message"

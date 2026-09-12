@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Tests for notebook generation module.
 
@@ -10,17 +9,18 @@ Covers:
 - Gated vs non-gated behavior
 """
 
-import json
 import base64
-from pathlib import Path
+import json
 
 # Import with path adjustment for test environment
 import sys
+from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.notebook import generate_notebook
 from core.registry import (
-    get_lora_targets,
     _DEFAULT_LORA_TARGETS,
+    get_lora_targets,
 )
 
 
@@ -40,7 +40,7 @@ def _make_sample_dataset(n: int = 10) -> str:
 
 class TestNotebookJSONValidity:
     """Test that generated notebooks are valid JSON."""
-    
+
     def test_notebook_is_valid_json(self):
         """Generated notebook should be valid JSON."""
         dataset = _make_sample_dataset(50)
@@ -53,11 +53,11 @@ class TestNotebookJSONValidity:
             num_examples=50,
             is_gated=False,
         )
-        
+
         # Should not raise
         notebook = json.loads(notebook_json)
         assert isinstance(notebook, dict)
-    
+
     def test_notebook_has_required_structure(self):
         """Notebook should have nbformat structure."""
         dataset = _make_sample_dataset(50)
@@ -70,9 +70,9 @@ class TestNotebookJSONValidity:
             num_examples=50,
             is_gated=False,
         )
-        
+
         notebook = json.loads(notebook_json)
-        
+
         # Required Jupyter notebook fields
         assert "nbformat" in notebook
         assert "cells" in notebook
@@ -80,7 +80,7 @@ class TestNotebookJSONValidity:
         assert notebook["nbformat"] == 4
         assert isinstance(notebook["cells"], list)
         assert len(notebook["cells"]) > 0
-    
+
     def test_cells_have_proper_structure(self):
         """Each cell should have correct structure."""
         dataset = _make_sample_dataset(50)
@@ -93,9 +93,9 @@ class TestNotebookJSONValidity:
             num_examples=50,
             is_gated=False,
         )
-        
+
         notebook = json.loads(notebook_json)
-        
+
         for cell in notebook["cells"]:
             assert "cell_type" in cell
             assert cell["cell_type"] in ("code", "markdown")
@@ -105,7 +105,7 @@ class TestNotebookJSONValidity:
 
 class TestLoRATargetCorrectness:
     """Test LoRA target mappings for different model architectures."""
-    
+
     def test_phi_models_get_correct_targets(self):
         """Phi-3/4 models should get standard targets (gate/up/down) not fc1/fc2."""
         targets = get_lora_targets("microsoft/Phi-4-mini-instruct")
@@ -113,7 +113,7 @@ class TestLoRATargetCorrectness:
         assert "gate_proj" in targets
         assert "up_proj" in targets
         assert "down_proj" in targets
-    
+
     def test_gemma_models_get_correct_targets(self):
         """Gemma models should NOT get gate_proj/up_proj/down_proj."""
         targets = get_lora_targets("google/gemma-2-2b-it")
@@ -125,7 +125,7 @@ class TestLoRATargetCorrectness:
         assert "gate_proj" not in targets
         assert "up_proj" not in targets
         assert "down_proj" not in targets
-    
+
     def test_llama_models_get_correct_targets(self):
         """Llama models should get standard targets including gate_proj."""
         targets = get_lora_targets("meta-llama/Llama-3.2-3B-Instruct")
@@ -133,17 +133,17 @@ class TestLoRATargetCorrectness:
         assert "gate_proj" in targets
         assert "up_proj" in targets
         assert "down_proj" in targets
-    
+
     def test_mistral_models_get_correct_targets(self):
         """Mistral models should get standard targets."""
         targets = get_lora_targets("mistralai/Mistral-7B-Instruct-v0.3")
         assert "gate_proj" in targets
-    
+
     def test_qwen_models_get_correct_targets(self):
         """Qwen models should get standard targets."""
         targets = get_lora_targets("Qwen/Qwen2.5-3B-Instruct")
         assert "gate_proj" in targets
-    
+
     def test_unknown_model_gets_default(self):
         """Unknown models should get default targets."""
         targets = get_lora_targets("some-unknown/model-name")
@@ -152,7 +152,7 @@ class TestLoRATargetCorrectness:
 
 class TestBase64RoundTrip:
     """Test that embedded dataset survives base64 encoding."""
-    
+
     def test_dataset_survives_encoding(self):
         """Dataset should be recoverable from notebook."""
         original_dataset = _make_sample_dataset(20)
@@ -165,9 +165,9 @@ class TestBase64RoundTrip:
             num_examples=20,
             is_gated=False,
         )
-        
+
         notebook = json.loads(notebook_json)
-        
+
         # Find the cell with embedded dataset
         dataset_cell = None
         for cell in notebook["cells"]:
@@ -176,23 +176,23 @@ class TestBase64RoundTrip:
                 if "DATASET_B64" in source:
                     dataset_cell = source
                     break
-        
+
         assert dataset_cell is not None
-        
+
         # Extract the base64 string
         import re
         match = re.search(r'DATASET_B64 = "([^"]+)"', dataset_cell)
         assert match is not None
-        
+
         b64_content = match.group(1)
         decoded = base64.b64decode(b64_content).decode()
-        
+
         assert decoded == original_dataset
 
 
 class TestGatedModelBehavior:
     """Test that gated models get HuggingFace login cell."""
-    
+
     def test_gated_model_has_login_cell(self):
         """Gated models should include HuggingFace login cell."""
         dataset = _make_sample_dataset(50)
@@ -205,15 +205,15 @@ class TestGatedModelBehavior:
             num_examples=50,
             is_gated=True,  # Explicitly marked gated
         )
-        
+
         notebook = json.loads(notebook_json)
-        
+
         # Should have a cell mentioning HuggingFace login
         all_content = " ".join(
             "".join(cell["source"]) for cell in notebook["cells"]
         )
         assert "huggingface" in all_content.lower() or "login" in all_content.lower()
-    
+
     def test_non_gated_model_no_login_cell(self):
         """Non-gated models should not require login."""
         dataset = _make_sample_dataset(50)
@@ -226,13 +226,13 @@ class TestGatedModelBehavior:
             num_examples=50,
             is_gated=False,
         )
-        
+
         notebook = json.loads(notebook_json)
-        
+
         # Should NOT have "login()" call in code cells
         code_cells = [c for c in notebook["cells"] if c["cell_type"] == "code"]
         login_found = any(
-            "login()" in "".join(cell["source"]) 
+            "login()" in "".join(cell["source"])
             for cell in code_cells
         )
         assert not login_found

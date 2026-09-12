@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Export Pipeline.
 
@@ -24,7 +23,7 @@ class ExportConfig:
 def get_system_prompt_template(model_id: str) -> str:
     """Get system prompt template for model."""
     model_lower = model_id.lower()
-    
+
     templates = {
         "llama": "You are a helpful AI assistant.",
         "llama3": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{{system_prompt}}<|eot_id|>",
@@ -33,24 +32,24 @@ def get_system_prompt_template(model_id: str) -> str:
         "gemma": "<bos><|start_header_id|>model<|end_header_id|>\n\n{{system_prompt}}<|eot_id|>",
         "phi": "<|system|>\n{{system_prompt}}<|end|>",
     }
-    
+
     for key, template in templates.items():
         if key in model_lower:
             return template
-    
+
     return "You are a helpful AI assistant."
 
 
 def generate_ollama_modelfile(model_id: str, system_prompt: str = "", base_model_name: str = "") -> str:
     """Generate Ollama Modelfile."""
     system = system_prompt or "You are a helpful AI assistant."
-    
+
     if not base_model_name:
         base_model_name = model_id.split("/")[-1].replace("-Instruct", "").replace("-Chat", "")
-    
+
     template = get_system_prompt_template(model_id)
     template = template.replace("{{system_prompt}}", system)
-    
+
     return f"""FROM {model_id}
 
 PARAMETER temperature 0.7
@@ -114,11 +113,11 @@ def get_export_instructions(format: str, model_id: str, system_prompt: str = "")
         "vllm": lambda: generate_vllm_template(model_id),
         "hf": lambda: generate_huggingface_push(model_id),
     }
-    
+
     generator = generators.get(format)
     if generator:
         return generator()
-    
+
     return "# Unknown export format"
 
 

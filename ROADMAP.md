@@ -103,7 +103,7 @@
 |---------|------|---------|
 | 1.0.0 | 2026-01 | Initial release |
 | 2.0.0 | 2026-04 | Simplified, removed Redis |
-| 3.0.0 | 2026-04 | 18 models, converter, presets |
+| 3.0.0 | 2026-04 | 18 models, converter, presets, GPU tiering, stabilization & full CI/CD |
 
 ---
 

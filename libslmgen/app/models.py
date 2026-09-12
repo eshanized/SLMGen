@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Pydantic Models and Schemas.
 
@@ -10,7 +9,7 @@ Defines all the data structures used across the API.
 # Copyright (c) 2026 Eshan Roy
 
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -64,6 +63,7 @@ class ModelRecommendation(BaseModel):
     reasons: list[str] = Field(default_factory=list, description="Why we picked this Model")
     context_window: int = Field(..., description="Max context length")
     is_gated: bool = Field(default=False, description="Requires HF login")
+    gpu_requirement: str = Field(default="T4 (Free)", description="Recommended GPU tier")
 
 
 class RecommendationResponse(BaseModel):
@@ -101,7 +101,7 @@ class RecommendRequest(BaseModel):
 class GenerateRequest(BaseModel):
     """Request to generate a Training notebook."""
     session_id: str
-    model_id: Optional[str] = None  # if None, use the primary Recommendation
+    model_id: str | None = None  # if None, use the primary Recommendation
 
 
 class NotebookResponse(BaseModel):
@@ -109,7 +109,7 @@ class NotebookResponse(BaseModel):
     session_id: str
     notebook_filename: str
     download_url: str
-    colab_url: Optional[str] = None  # only if GitHub token Configured
+    colab_url: str | None = None  # only if GitHub token Configured
     message: str = "Notebook generated successfully!"
 
 
@@ -133,9 +133,9 @@ class TrainingEventRequest(BaseModel):
     loss: float
     epoch: int = 0
     learning_rate: float = 0.0
-    grad_norm: Optional[float] = None
-    tokens_per_second: Optional[float] = None
-    gpu_memory_used: Optional[float] = None
+    grad_norm: float | None = None
+    tokens_per_second: float | None = None
+    gpu_memory_used: float | None = None
 
 
 class TrainingStartRequest(BaseModel):
@@ -150,7 +150,7 @@ class TrainingStartRequest(BaseModel):
 class TrainingCompleteRequest(BaseModel):
     """Request to mark training as completed."""
     session_id: str
-    error: Optional[str] = None  # If set, marks as failed
+    error: str | None = None  # If set, marks as failed
 
 
 class TrainingEventResponse(BaseModel):
@@ -160,9 +160,9 @@ class TrainingEventResponse(BaseModel):
     epoch: int
     learning_rate: float
     timestamp: str
-    grad_norm: Optional[float] = None
-    tokens_per_second: Optional[float] = None
-    gpu_memory_used: Optional[float] = None
+    grad_norm: float | None = None
+    tokens_per_second: float | None = None
+    gpu_memory_used: float | None = None
 
 
 class TrainingStatusResponse(BaseModel):
@@ -176,11 +176,11 @@ class TrainingStatusResponse(BaseModel):
     current_step: int
     current_epoch: int
     progress_percent: float
-    latest_loss: Optional[float] = None
-    eta_seconds: Optional[float] = None
-    eta_formatted: Optional[str] = None
+    latest_loss: float | None = None
+    eta_seconds: float | None = None
+    eta_formatted: str | None = None
     created_at: str
-    started_at: Optional[str] = None
-    completed_at: Optional[str] = None
-    error_message: Optional[str] = None
+    started_at: str | None = None
+    completed_at: str | None = None
+    error_message: str | None = None
     event_count: int = 0

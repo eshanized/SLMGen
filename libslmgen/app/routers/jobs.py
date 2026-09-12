@@ -17,12 +17,12 @@ Contributor: Vedant Singh Rajput <teleported0722@gmail.com>
 @copyright 2026 Eshan Roy
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime, timezone
 
-from app.middleware.auth import get_current_user, AuthenticatedUser
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+
+from app.middleware.auth import AuthenticatedUser, get_current_user
 from app.supabase import get_supabase_client, is_supabase_configured
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -35,15 +35,15 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 def _require_supabase():
     """
     Check if Supabase is configured, raise helpful error if not.
-    
+
     This is called at the start of each jobs endpoint. If you're running
     locally with AUTH_DISABLED=true, you probably don't have Supabase set up,
     and that's totally fine! This returns a friendly error explaining the situation.
-    
+
     Why 503 (Service Unavailable)?
         It's the right status code for "this feature exists but isn't available right now"
         The client can retry later when Supabase is configured.
-    
+
     Raises:
         HTTPException: 503 if Supabase is not configured
     """
@@ -79,11 +79,11 @@ class JobCreate(BaseModel):
 
 
 class JobUpdate(BaseModel):
-    notebook_filename: Optional[str] = None
-    notebook_path: Optional[str] = None
-    colab_url: Optional[str] = None
-    status: Optional[str] = None
-    training_config: Optional[dict] = None
+    notebook_filename: str | None = None
+    notebook_path: str | None = None
+    colab_url: str | None = None
+    status: str | None = None
+    training_config: dict | None = None
 
 
 class JobResponse(BaseModel):
@@ -101,9 +101,9 @@ class JobResponse(BaseModel):
     selected_model_name: str
     model_score: float
     training_config: dict
-    notebook_filename: Optional[str] = None
-    notebook_path: Optional[str] = None
-    colab_url: Optional[str] = None
+    notebook_filename: str | None = None
+    notebook_path: str | None = None
+    colab_url: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime
@@ -113,7 +113,7 @@ class JobResponse(BaseModel):
 # ENDPOINTS
 # ============================================
 
-@router.get("", response_model=List[JobResponse])
+@router.get("", response_model=list[JobResponse])
 async def list_jobs(
     user: AuthenticatedUser = Depends(get_current_user),
     limit: int = 50,
@@ -121,23 +121,23 @@ async def list_jobs(
 ):
     """
     List all jobs for the current user.
-    
+
     Returns a paginated list of the user's fine-tuning jobs, newest first.
     Each job contains the full configuration and status.
-    
+
     Note: Requires Supabase database connection. Returns 503 in local dev mode.
     """
     _require_supabase()
-    
+
     supabase = get_supabase_client()
-    
+
     response = supabase.table("jobs") \
         .select("*") \
         .eq("user_id", user.id) \
         .order("created_at", desc=True) \
         .range(offset, offset + limit - 1) \
         .execute()
-    
+
     return response.data
 
 
@@ -149,20 +149,20 @@ async def get_job(
     """Get a specific job by ID."""
     _require_supabase()
     supabase = get_supabase_client()
-    
+
     response = supabase.table("jobs") \
         .select("*") \
         .eq("id", job_id) \
         .eq("user_id", user.id) \
         .single() \
         .execute()
-    
+
     if not response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
         )
-    
+
     return response.data
 
 
@@ -174,23 +174,23 @@ async def create_job(
     """Create a new job record."""
     _require_supabase()
     supabase = get_supabase_client()
-    
+
     job_data = {
         **job.model_dump(),
         "user_id": user.id,
         "status": "created"
     }
-    
+
     response = supabase.table("jobs") \
         .insert(job_data) \
         .execute()
-    
+
     if not response.data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create job"
         )
-    
+
     return response.data[0]
 
 
@@ -203,30 +203,30 @@ async def update_job(
     """Update a job record."""
     _require_supabase()
     supabase = get_supabase_client()
-    
+
     # Filter out None values
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
-    
+
     if not update_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No update fields provided"
         )
-    
+
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    
+
     response = supabase.table("jobs") \
         .update(update_data) \
         .eq("id", job_id) \
         .eq("user_id", user.id) \
         .execute()
-    
+
     if not response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
         )
-    
+
     return response.data[0]
 
 
@@ -238,7 +238,7 @@ async def delete_job(
     """Delete a job and its associated files."""
     _require_supabase()
     supabase = get_supabase_client()
-    
+
     # Get job first to check ownership and get file paths
     job_response = supabase.table("jobs") \
         .select("*") \
@@ -246,15 +246,15 @@ async def delete_job(
         .eq("user_id", user.id) \
         .single() \
         .execute()
-    
+
     if not job_response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
         )
-    
+
     job = job_response.data
-    
+
     # Delete associated files from storage
     try:
         if job.get("dataset_path"):
@@ -263,15 +263,14 @@ async def delete_job(
             supabase.storage.from_("notebooks").remove([job["notebook_path"]])
     except Exception:
         pass  # Continue even if file deletion fails
-    
+
     # Delete job record
     supabase.table("jobs") \
         .delete() \
         .eq("id", job_id) \
         .eq("user_id", user.id) \
         .execute()
-    
-    return None
+
 
 
 @router.get("/session/{session_id}", response_model=JobResponse)
@@ -282,18 +281,18 @@ async def get_job_by_session(
     """Get a job by session ID."""
     _require_supabase()
     supabase = get_supabase_client()
-    
+
     response = supabase.table("jobs") \
         .select("*") \
         .eq("session_id", session_id) \
         .eq("user_id", user.id) \
         .single() \
         .execute()
-    
+
     if not response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
         )
-    
+
     return response.data

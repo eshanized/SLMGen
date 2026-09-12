@@ -23,8 +23,6 @@ import {
     Download,
     Gauge,
     Layers,
-    Terminal,
-    Cpu,
 } from '@/components/icons';
 
 export const metadata: Metadata = {
@@ -77,7 +75,7 @@ export default function AboutPage() {
                         <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                             V3.0.0
                         </span>
-                        {' '}What's New
+                        {' '}What&apos;s New
                     </h2>
                     <div className="grid md:grid-cols-2 gap-4">
                         {[

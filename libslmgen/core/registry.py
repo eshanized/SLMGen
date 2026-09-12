@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Model Registry Module.
 
@@ -13,10 +12,9 @@ while ensuring compatibility with Unsloth's supported architectures.
 import logging
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional
 
 from huggingface_hub import HfApi, hf_hub_download
-from huggingface_hub.utils import RepositoryNotFoundError, GatedRepoError
+from huggingface_hub.utils import GatedRepoError, RepositoryNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +22,7 @@ logger = logging.getLogger(__name__)
 # These are the model architectures that Unsloth can optimize
 SUPPORTED_ARCHITECTURES = frozenset([
     "LlamaForCausalLM",
-    "MistralForCausalLM", 
+    "MistralForCausalLM",
     "MistralSmallForCausalLM",  # Mistral Small 3
     "Phi3ForCausalLM",
     "PhiForCausalLM",
@@ -48,12 +46,12 @@ LORA_TARGETS = {
     # Phi models use fc1/fc2
     "Phi3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "PhiForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "fc1", "fc2"],
-    
+
     # Gemma models have simple attention
     "GemmaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
     "Gemma2ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
     "Gemma3ForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj"],
-    
+
     # Llama-like (most models)
     "LlamaForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     "MistralForCausalLM": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
@@ -88,34 +86,34 @@ class ModelInfo:
 class ModelRegistry:
     """
     Registry for validating and fetching model metadata from Hugging Face.
-    
+
     This class provides:
     - Validation of model IDs against Hugging Face Hub
     - Architecture compatibility checking with Unsloth
     - Caching of model metadata to reduce API calls
     """
-    
+
     def __init__(self):
         self.api = HfApi()
         self._cache: dict[str, ModelInfo] = {}
-    
+
     def validate_model(self, model_id: str) -> ModelInfo:
         """
         Validate a Hugging Face model ID and return its metadata.
-        
+
         Args:
             model_id: The Hugging Face model ID (e.g., "meta-llama/Llama-3.2-3B")
-            
+
         Returns:
             ModelInfo with validation results
-            
+
         Raises:
             ValueError: If model doesn't exist on Hugging Face
         """
         # Check cache first
         if model_id in self._cache:
             return self._cache[model_id]
-        
+
         try:
             # Fetch model info from HF
             model_info = self.api.model_info(model_id)
@@ -128,10 +126,10 @@ class ModelRegistry:
         except Exception as e:
             logger.error(f"Error fetching model info for {model_id}: {e}")
             raise ValueError(f"Failed to fetch model info: {e}")
-        
+
         # Extract architecture from config
         architecture = self._get_architecture(model_id, model_info)
-        
+
         # Check compatibility
         is_compatible = architecture in SUPPORTED_ARCHITECTURES
         compatibility_reason = (
@@ -139,10 +137,10 @@ class ModelRegistry:
             if is_compatible
             else f"⚠️ Architecture '{architecture}' may not be optimized by Unsloth"
         )
-        
+
         # Get context window
         context_window = self._get_context_window(model_id, model_info)
-        
+
         # Build result
         result = ModelInfo(
             model_id=model_id,
@@ -155,11 +153,11 @@ class ModelRegistry:
             is_compatible=is_compatible,
             compatibility_reason=compatibility_reason,
         )
-        
+
         # Cache the result
         self._cache[model_id] = result
         return result
-    
+
     def _get_architecture(self, model_id: str, model_info) -> str:
         """Extract model architecture from config."""
         # Try to get from model card config
@@ -167,24 +165,23 @@ class ModelRegistry:
             config = model_info.config
             if hasattr(config, 'architectures') and config.architectures:
                 return config.architectures[0]
-        
+
         # Try to fetch config.json directly
         try:
             import json
             config_path = hf_hub_download(
                 repo_id=model_id,
                 filename="config.json",
-                local_dir_use_symlinks=False,
             )
             with open(config_path, 'r') as f:
                 config = json.load(f)
-                if 'architectures' in config and config['architectures']:
+                if config.get('architectures'):
                     return config['architectures'][0]
         except Exception as e:
             logger.warning(f"Could not fetch config.json for {model_id}: {e}")
-        
+
         return "Unknown"
-    
+
     def _get_context_window(self, model_id: str, model_info) -> int:
         """Extract context window from model config."""
         # Try from config
@@ -194,14 +191,13 @@ class ModelRegistry:
             for attr in ['max_position_embeddings', 'max_seq_length', 'n_positions']:
                 if hasattr(config, attr):
                     return getattr(config, attr)
-        
-        # Try to fetch config.json directly  
+
+        # Try to fetch config.json directly
         try:
             import json
             config_path = hf_hub_download(
                 repo_id=model_id,
                 filename="config.json",
-                local_dir_use_symlinks=False,
             )
             with open(config_path, 'r') as f:
                 config = json.load(f)
@@ -210,9 +206,9 @@ class ModelRegistry:
                         return config[key]
         except Exception:
             pass
-        
+
         return 4096  # Default fallback
-    
+
     def _create_gated_model_info(self, model_id: str) -> ModelInfo:
         """Create ModelInfo for gated models with limited access."""
         return ModelInfo(
@@ -226,11 +222,11 @@ class ModelRegistry:
             is_compatible=True,  # Assume compatible if gated
             compatibility_reason="⚠️ Gated model - requires HF token for full validation",
         )
-    
+
     def is_compatible(self, model_id: str) -> tuple[bool, str]:
         """
         Quick check if a model is compatible with Unsloth.
-        
+
         Returns:
             Tuple of (is_compatible, reason)
         """
@@ -242,7 +238,7 @@ class ModelRegistry:
 
 
 # Global registry instance
-_registry: Optional[ModelRegistry] = None
+_registry: ModelRegistry | None = None
 
 
 def get_registry() -> ModelRegistry:
@@ -257,7 +253,7 @@ def get_registry() -> ModelRegistry:
 def validate_hf_model(model_id: str) -> ModelInfo:
     """
     Validate a Hugging Face model ID (cached).
-    
+
     This is a convenience function that uses the global registry.
     """
     return get_registry().validate_model(model_id)
@@ -266,7 +262,7 @@ def validate_hf_model(model_id: str) -> ModelInfo:
 def check_compatibility(model_id: str) -> tuple[bool, str]:
     """
     Check if a model ID is compatible with Unsloth.
-    
+
     Returns:
         Tuple of (is_compatible, reason_message)
     """
@@ -277,14 +273,14 @@ def check_compatibility(model_id: str) -> tuple[bool, str]:
 def get_lora_targets(model_id: str) -> list[str]:
     """
     Get the correct LoRA target modules for a given model.
-    
+
     Uses the registry to detect architecture and returns appropriate targets.
     """
     try:
         info = validate_hf_model(model_id)
         if info.architecture and info.architecture != "Unknown":
             return LORA_TARGETS.get(info.architecture, _DEFAULT_LORA_TARGETS)
-            
+
         # Fallback if architecture is Unknown (e.g. gated)
         if "Phi" in model_id:
              # Check for Phi-3 which is Llama-like

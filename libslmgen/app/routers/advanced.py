@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Advanced Features Router.
 
@@ -11,21 +10,24 @@ These are additive to the core upload → analyze → recommend → generate flo
 # Copyright (c) 2026 Eshan Roy
 
 import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.session_store import session_store
 from app.models import DatasetStats
+from app.session_store import session_store
 from core import (
+    SUPPORTED_ARCHITECTURES,
+    BehaviorConfig,
+    calculate_confidence,
+    compare_prompts,
+    compose_behavior,
     detect_personality,
     estimate_hallucination_risk,
-    calculate_confidence,
-    compose_behavior,
-    BehaviorConfig,
-    lint_prompt,
     generate_failure_previews,
+    generate_model_card,
+    lint_prompt,
     validate_hf_model,
-    SUPPORTED_ARCHITECTURES,
 )
 from core.recommender import MODELS
 
@@ -161,11 +163,11 @@ async def _get_session_raw_data(session_id: str) -> list[dict]:
     session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or no data")
-    
+
     raw_data = session.get("data", {}).get("raw_data", [])
     if not raw_data:
         raise HTTPException(status_code=404, detail="Session not found or no data")
-    
+
     return raw_data
 
 
@@ -178,7 +180,7 @@ async def get_personality(session_id: str):
     """Get dataset personality analysis."""
     raw_data = await _get_session_raw_data(session_id)
     personality = detect_personality(raw_data)
-    
+
     return PersonalityResponse(
         tone=personality.tone,
         verbosity=personality.verbosity,
@@ -194,7 +196,7 @@ async def get_risk(session_id: str):
     """Get hallucination risk estimate."""
     raw_data = await _get_session_raw_data(session_id)
     risk = estimate_hallucination_risk(raw_data)
-    
+
     return RiskResponse(
         score=risk.score,
         level=risk.level,
@@ -208,7 +210,7 @@ async def get_confidence(session_id: str):
     """Get dataset confidence score."""
     raw_data = await _get_session_raw_data(session_id)
     conf = calculate_confidence(raw_data)
-    
+
     return ConfidenceResponse(
         score=conf.score,
         level=conf.level,
@@ -228,9 +230,9 @@ async def compose_behavior_prompt(request: BehaviorRequest):
         risk_tolerance=request.risk_tolerance,
         creativity=request.creativity,
     )
-    
+
     result = compose_behavior(config)
-    
+
     return BehaviorResponse(
         system_prompt=result.system_prompt,
         explanation=result.explanation,
@@ -242,7 +244,7 @@ async def compose_behavior_prompt(request: BehaviorRequest):
 async def lint_prompt_endpoint(request: LintRequest):
     """Lint a prompt for issues."""
     result = lint_prompt(request.prompt)
-    
+
     return LintResponse(
         score=result.score,
         warnings=[
@@ -263,7 +265,7 @@ async def get_failure_preview(session_id: str):
     """Get synthetic failure cases for the dataset."""
     raw_data = await _get_session_raw_data(session_id)
     cases = generate_failure_previews(raw_data)
-    
+
     return [
         FailureCase(
             category=c.category,
@@ -280,7 +282,7 @@ async def get_failure_preview(session_id: str):
 async def diff_prompts(request: PromptDiffRequest):
     """Compare two prompts semantically."""
     result = compare_prompts(request.prompt_a, request.prompt_b)
-    
+
     return PromptDiffResponse(
         similarity=result.similarity,
         changes=[
@@ -301,7 +303,7 @@ async def model_deep_dive(model_key: str):
     model = MODELS.get(model_key)
     if not model:
         raise HTTPException(status_code=404, detail=f"Model '{model_key}' not found")
-    
+
     return ModelDeepDiveResponse(
         model_id=model.model_id,
         model_name=model.name,
@@ -321,25 +323,25 @@ async def get_model_card(session_id: str):
     session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or incomplete")
-    
+
     session_data = session.get("data", {})
     stats_dict = session_data.get("stats")
     if not stats_dict:
         raise HTTPException(status_code=404, detail="Session not found or incomplete")
-    
+
     stats = DatasetStats(**stats_dict)
-    
+
     model_id = session_data.get("selected_model_id", "unknown")
     model_name = "Custom Model"
-    
+
     # Find model name
     for key, spec in MODELS.items():
         if spec.model_id == model_id:
             model_name = spec.name
             break
-    
+
     task = session_data.get("task_type", "general")
-    
+
     # Get personality if available
     personality_summary = None
     raw_data = session_data.get("raw_data", [])
@@ -349,7 +351,7 @@ async def get_model_card(session_id: str):
             personality_summary = personality.summary
         except Exception:
             pass
-    
+
     card = generate_model_card(
         model_name=model_name,
         model_id=model_id,
@@ -358,7 +360,7 @@ async def get_model_card(session_id: str):
         quality_score=stats.quality_score,
         personality_summary=personality_summary,
     )
-    
+
     return ModelCardResponse(
         title=card.title,
         description=card.description,
@@ -370,7 +372,7 @@ async def get_model_card(session_id: str):
 async def validate_model_endpoint(request: ValidateModelRequest):
     """
     Validate a Hugging Face model ID for Unsloth compatibility.
-    
+
     Checks if the model exists on Hugging Face Hub and whether its
     architecture is supported by Unsloth for optimized fine-tuning.
     """
@@ -381,7 +383,7 @@ async def validate_model_endpoint(request: ValidateModelRequest):
     except Exception as e:
         logger.error(f"Error validating model {request.model_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to validate model")
-    
+
     return ValidateModelResponse(
         model_id=info.model_id,
         name=info.name,

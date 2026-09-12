@@ -43,7 +43,6 @@ import type {
     PipelineStep,
     JobStatusResponse,
 } from '@/lib/types';
-import { pollJobStatus } from '@/lib/api';
 
 // ============================================================================
 // TYPES
@@ -168,7 +167,7 @@ export function useSession() {
         sessionId: string,
         stats: DatasetStats | null,
         filePreview?: string,
-        startPolling: boolean = true
+        startPolling: boolean = false
     ) => {
         setState(prev => {
             // Clean up existing polling if any
@@ -220,50 +219,14 @@ export function useSession() {
     }, []);
 
     /**
-     * Start polling for job status.
+     * Start polling for job status (synchronous fallback).
      */
     const startJobPolling = useCallback((
-        sessionId: string,
-        onUpdate?: (status: JobStatusResponse) => void,
-        onComplete?: (status: JobStatusResponse) => void,
-        onError?: (error: string) => void
+        ..._args: unknown[]
     ) => {
-        // Clean up existing polling
-        setState(prev => {
-            if (prev._pollCleanup) {
-                prev._pollCleanup();
-            }
-            return { ...prev, _pollCleanup: null };
-        });
-
-        const cleanup = pollJobStatus(
-            sessionId,
-            (status) => {
-                setJobStatus(status);
-                onUpdate?.(status);
-            },
-            (status) => {
-                setJobStatus(status);
-                onComplete?.(status);
-            },
-            (error) => {
-                setState(prev => ({
-                    ...prev,
-                    jobStatus: 'failed',
-                    jobError: error,
-                }));
-                onError?.(error);
-            },
-            2000, // Poll every 2 seconds
-            150   // Max 5 minutes
-        );
-
-        setState(prev => ({
-            ...prev,
-            jobStatus: 'processing',
-            _pollCleanup: cleanup,
-        }));
-    }, [setJobStatus]);
+        void _args;
+        // Backend operations are synchronous in V3.0
+    }, []);
 
     /**
      * Stop polling for job status.

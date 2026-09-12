@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Training Progress Tracker.
 
@@ -11,11 +10,11 @@ Stores training events (loss, step, epoch) and provides ETA estimation.
 # Copyright (c) 2026 Eshan Roy
 
 import logging
-from datetime import datetime, timedelta, timezone
-from dataclasses import dataclass, field
-from typing import Optional
-from enum import Enum
 import threading
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +35,12 @@ class TrainingEvent:
     epoch: int
     learning_rate: float
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
+
     # Optional metrics
-    grad_norm: Optional[float] = None
-    tokens_per_second: Optional[float] = None
-    gpu_memory_used: Optional[float] = None  # In GB
-    
+    grad_norm: float | None = None
+    tokens_per_second: float | None = None
+    gpu_memory_used: float | None = None  # In GB
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -65,95 +64,95 @@ class TrainingSession:
     total_steps: int
     total_epochs: int
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     status: TrainingStatus = TrainingStatus.PENDING
     events: list[TrainingEvent] = field(default_factory=list)
-    error_message: Optional[str] = None
-    
+    error_message: str | None = None
+
     # TTL for session cleanup (2 hours after last activity)
     _last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
+
     def add_event(self, event: TrainingEvent) -> None:
         """Add a training event to the session."""
         self.events.append(event)
         self._last_activity = datetime.now(timezone.utc)
-        
+
         # Update status on first event
         if self.status == TrainingStatus.PENDING:
             self.status = TrainingStatus.RUNNING
             self.started_at = event.timestamp
-    
+
     def complete(self) -> None:
         """Mark training as completed."""
         self.status = TrainingStatus.COMPLETED
         self.completed_at = datetime.now(timezone.utc)
         self._last_activity = self.completed_at
-    
+
     def fail(self, error: str) -> None:
         """Mark training as failed."""
         self.status = TrainingStatus.FAILED
         self.error_message = error
         self.completed_at = datetime.now(timezone.utc)
         self._last_activity = self.completed_at
-    
+
     def is_expired(self, ttl_hours: int = 2) -> bool:
         """Check if session has expired."""
         return datetime.now(timezone.utc) > self._last_activity + timedelta(hours=ttl_hours)
-    
+
     @property
     def current_step(self) -> int:
         """Get the current step number."""
         if not self.events:
             return 0
         return self.events[-1].step
-    
+
     @property
     def current_epoch(self) -> int:
         """Get the current epoch number."""
         if not self.events:
             return 0
         return self.events[-1].epoch
-    
+
     @property
-    def latest_loss(self) -> Optional[float]:
+    def latest_loss(self) -> float | None:
         """Get the latest loss value."""
         if not self.events:
             return None
         return self.events[-1].loss
-    
+
     @property
     def progress_percent(self) -> float:
         """Get training progress as percentage."""
         if self.total_steps == 0:
             return 0.0
         return min(100.0, (self.current_step / self.total_steps) * 100)
-    
-    def estimate_eta(self) -> Optional[timedelta]:
+
+    def estimate_eta(self) -> timedelta | None:
         """Estimate time remaining based on current pace."""
         if len(self.events) < 2:
             return None
-        
+
         # Calculate average time per step from recent events
         recent_events = self.events[-min(20, len(self.events)):]
         if len(recent_events) < 2:
             return None
-        
+
         time_diff = (recent_events[-1].timestamp - recent_events[0].timestamp).total_seconds()
         steps_diff = recent_events[-1].step - recent_events[0].step
-        
+
         if steps_diff <= 0:
             return None
-        
+
         seconds_per_step = time_diff / steps_diff
         remaining_steps = self.total_steps - self.current_step
-        
+
         return timedelta(seconds=remaining_steps * seconds_per_step)
-    
+
     def get_loss_history(self) -> list[tuple[int, float]]:
         """Get list of (step, loss) tuples for charting."""
         return [(e.step, e.loss) for e in self.events]
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         eta = self.estimate_eta()
@@ -176,7 +175,7 @@ class TrainingSession:
             "error_message": self.error_message,
             "event_count": len(self.events),
         }
-    
+
     @staticmethod
     def _format_eta(eta: timedelta) -> str:
         """Format ETA as human-readable string."""
@@ -196,14 +195,14 @@ class TrainingSession:
 class TrainingTracker:
     """
     Singleton manager for all training sessions.
-    
+
     Provides thread-safe access to training sessions and handles cleanup
     of expired sessions.
     """
-    
+
     _instance: Optional["TrainingTracker"] = None
     _lock = threading.Lock()
-    
+
     def __new__(cls) -> "TrainingTracker":
         """Ensure singleton instance."""
         if cls._instance is None:
@@ -214,7 +213,7 @@ class TrainingTracker:
                     cls._instance._session_lock = threading.Lock()
                     logger.info("TrainingTracker singleton initialized")
         return cls._instance
-    
+
     def start_session(
         self,
         session_id: str,
@@ -227,7 +226,7 @@ class TrainingTracker:
         with self._session_lock:
             # Cleanup expired sessions first
             self._cleanup_expired()
-            
+
             session = TrainingSession(
                 session_id=session_id,
                 job_id=job_id,
@@ -238,12 +237,12 @@ class TrainingTracker:
             self._sessions[session_id] = session
             logger.info(f"Started training session: {session_id}")
             return session
-    
-    def get_session(self, session_id: str) -> Optional[TrainingSession]:
+
+    def get_session(self, session_id: str) -> TrainingSession | None:
         """Get a training session by ID."""
         with self._session_lock:
             return self._sessions.get(session_id)
-    
+
     def add_event(
         self,
         session_id: str,
@@ -251,13 +250,13 @@ class TrainingTracker:
         loss: float,
         epoch: int,
         learning_rate: float,
-        grad_norm: Optional[float] = None,
-        tokens_per_second: Optional[float] = None,
-        gpu_memory_used: Optional[float] = None,
+        grad_norm: float | None = None,
+        tokens_per_second: float | None = None,
+        gpu_memory_used: float | None = None,
     ) -> bool:
         """
         Add a training event to a session.
-        
+
         Returns True if event was added, False if session not found.
         """
         with self._session_lock:
@@ -265,7 +264,7 @@ class TrainingTracker:
             if session is None:
                 logger.warning(f"Training session not found: {session_id}")
                 return False
-            
+
             event = TrainingEvent(
                 step=step,
                 loss=loss,
@@ -278,7 +277,7 @@ class TrainingTracker:
             session.add_event(event)
             logger.debug(f"Added event to session {session_id}: step={step}, loss={loss:.4f}")
             return True
-    
+
     def complete_session(self, session_id: str) -> bool:
         """Mark a session as completed."""
         with self._session_lock:
@@ -288,7 +287,7 @@ class TrainingTracker:
             session.complete()
             logger.info(f"Training session completed: {session_id}")
             return True
-    
+
     def fail_session(self, session_id: str, error: str) -> bool:
         """Mark a session as failed."""
         with self._session_lock:
@@ -298,46 +297,46 @@ class TrainingTracker:
             session.fail(error)
             logger.warning(f"Training session failed: {session_id} - {error}")
             return True
-    
+
     def get_events(
         self,
         session_id: str,
-        since_step: Optional[int] = None,
+        since_step: int | None = None,
     ) -> list[dict]:
         """Get events from a session, optionally filtered by step."""
         with self._session_lock:
             session = self._sessions.get(session_id)
             if session is None:
                 return []
-            
+
             events = session.events
             if since_step is not None:
                 events = [e for e in events if e.step > since_step]
-            
+
             return [e.to_dict() for e in events]
-    
-    def get_latest(self, session_id: str) -> Optional[dict]:
+
+    def get_latest(self, session_id: str) -> dict | None:
         """Get the latest event from a session."""
         with self._session_lock:
             session = self._sessions.get(session_id)
             if session is None or not session.events:
                 return None
             return session.events[-1].to_dict()
-    
-    def get_status(self, session_id: str) -> Optional[dict]:
+
+    def get_status(self, session_id: str) -> dict | None:
         """Get the current status of a training session."""
         with self._session_lock:
             session = self._sessions.get(session_id)
             if session is None:
                 return None
             return session.to_dict()
-    
+
     def list_sessions(self) -> list[dict]:
         """List all active training sessions."""
         with self._session_lock:
             self._cleanup_expired()
             return [s.to_dict() for s in self._sessions.values()]
-    
+
     def _cleanup_expired(self) -> int:
         """Remove expired sessions. Returns count removed."""
         expired_ids = [
@@ -348,7 +347,7 @@ class TrainingTracker:
             del self._sessions[sid]
             logger.info(f"Cleaned up expired training session: {sid}")
         return len(expired_ids)
-    
+
     @property
     def active_count(self) -> int:
         """Number of active training sessions."""

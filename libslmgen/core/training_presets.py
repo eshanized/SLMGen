@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Training Presets.
 
@@ -13,7 +12,6 @@ Copyright (c) 2026 Eshan Roy
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -24,32 +22,32 @@ class TrainingPreset:
     key: str
     name: str
     description: str
-    
+
     # LoRA settings
     lora_rank: int
     lora_alpha: int
     lora_dropout: float
-    
+
     # Training settings
     learning_rate: float
     num_epochs: int
     batch_size: int
     gradient_accumulation: int
     max_seq_length: int
-    
+
     # Optimization
     warmup_steps: int
     scheduler: str  # "cosine", "linear", "constant"
     optimizer: str  # "adamw_torch", "adamw_8bit", "paged_adamw_32bit"
-    
+
     # Target modules
-    target_modules: Optional[list[str]] = None
-    
+    target_modules: list[str] | None = None
+
     # Quantization
     load_in_4bit: bool = True
     bnb_4bit_quant_type: str = "nf4"
     bnb_4bit_compute_dtype: str = "bfloat16"
-    
+
     # Use cases
     use_case: str = "general"
 
@@ -144,7 +142,7 @@ PRESETS: dict[str, TrainingPreset] = {
 }
 
 
-def get_preset(key: str) -> Optional[TrainingPreset]:
+def get_preset(key: str) -> TrainingPreset | None:
     """Get a preset by key."""
     return PRESETS.get(key)
 
@@ -166,12 +164,12 @@ def get_default_targets(model_key: str) -> list[str]:
         "smollm": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         "deepseek": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     }
-    
+
     model_key_lower = model_key.lower()
     for family, targets in targets_by_family.items():
         if family in model_key_lower:
             return targets
-    
+
     # Default fallback
     return ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
@@ -183,12 +181,12 @@ def get_recommended_preset(
 ) -> str:
     """
     Get recommended preset based on model size and dataset.
-    
+
     Args:
         model_size: Model size in billions (e.g., "3B", "7B")
         dataset_size: Number of training examples
         use_case: Specific use case override
-    
+
     Returns:
         Preset key
     """
@@ -197,7 +195,7 @@ def get_recommended_preset(
         size_num = float(model_size.replace("B", ""))
     else:
         size_num = 1.0
-    
+
     # Determine preset
     if use_case == "edge":
         return "edge_optimize"
@@ -226,20 +224,20 @@ def get_notebook_config(
 ) -> dict:
     """
     Generate notebook cell config for a preset.
-    
+
     Returns dict ready to insert in notebook template.
     """
     preset = get_preset(preset_key)
     if preset is None:
         preset = get_preset("production")
-    
+
     targets = get_default_targets(model_id)
-    
+
     # If model is larger than 14B, use smaller seq length
     max_seq = preset.max_seq_length
     if "70B" in model_id or "84B" in model_id or "32B" in model_id:
         max_seq = min(max_seq, 1024)
-    
+
     return {
         "lora_rank": preset.lora_rank,
         "lora_alpha": preset.lora_alpha,
